@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Triowise Plus | Online Shopping{% endblock %}
+
+{% block content %}
+<section class="hero-container">
+    <div class="main-banner">
+        <div class="banner-content">
+            <div class="news-pill">
+                <span class="badge">NEWS</span>
+                <span class="text">Free Shipping on Orders Above ₹50! <i class="fa-solid fa-chevron-right"></i></span>
+            </div>
+            <h1>Gadgets you'll love.<br>Prices you'll trust.</h1>
+            <p class="price-start">Starts from <br> <strong>₹100</strong></p>
+            <button class="learn-more" onclick="location.href='{{ url_for('all_products') }}'">LEARN MORE</button>
+        </div>
+        <img src="{{ url_for('static', filename='images/hero_model_img.png') }}" alt="Hero Model" class="hero-img">
+    </div>
+
+    <div class="side-banners">
+        <div class="side-card peach">
+            <div class="side-content">
+                <h2>Best<br>products</h2>
+                <a href="{{ url_for('all_products') }}" class="view-more">View more <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <img src="{{ url_for('static', filename='images/samsung25.png') }}" alt="Earbuds">
+        </div>
+
+        <div class="side-card blue">
+            <div class="side-content">
+                <h2>20%<br>discounts</h2>
+                <a href="{{ url_for('all_products') }}" class="view-more">View more <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <img src="{{ url_for('static', filename='images/fossil.png') }}" alt="Smart Watch">
+        </div>
+    </div>
+</section>
+
+<section class="category-marquee">
+    <div class="marquee-content">
+        {% for category in categories %}
+        <a href="{{ url_for('all_products', category=category) }}" class="category-item">{{ category }}</a>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- LATEST PRODUCTS SECTION - 5 products from database -->
+<section class="latest-products">
+    <div class="section-header">
+        <h2>Latest Products</h2>
+        <div class="section-subheader">
+            <span>Showing {{ latest_products|length }} of {{ total_products }} products</span>
+            <a href="{{ url_for('all_products', sort='newest') }}" class="view-more-link">View more <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <div class="product-grid">
+        {% for product in latest_products %}
+        <div class="product-card" onclick="location.href='{{ url_for('product_detail', product_id=product.id) }}'">
+            <div class="product-image">
+                <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
+                {% if product.discount > 0 %}
+                <span class="discount-badge">{{ product.discount }}% OFF</span>
+                {% endif %}
+            </div>
+            <div class="product-info">
+                <div class="title-price">
+                    <h3>{{ product.name[:30] }}{% if product.name|length > 30 %}...{% endif %}</h3>
+                    <span class="price">₹{{ product.price }}</span>
+                </div>
+                <div class="rating">
+                    {% for i in range(5) %}
+                        {% if i < product.rating|int %}
+                            <i class="fa-solid fa-star"></i>
+                        {% else %}
+                            <i class="fa-regular fa-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                    <span class="rating-count">({{ product.reviews_count }})</span>
+                </div>
+                {% if product.compare_price and product.compare_price > product.price %}
+                <div class="price-compare">
+                    <span class="original-price">₹{{ product.compare_price }}</span>
+                    <span class="discount-percent">{{ product.discount }}% off</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="no-products">
+            <p>No products available.</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- BEST SELLER SECTION - 5 products from database -->
+<section class="latest-products">
+    <div class="section-header">
+        <h2>Best Selling</h2>
+        <div class="section-subheader">
+            <span>Showing {{ best_seller_products|length }} of {{ total_products }} products</span>
+            <a href="{{ url_for('all_products', sort='rating') }}" class="view-more-link">View more <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <div class="product-grid">
+        {% for product in best_seller_products %}
+        <div class="product-card" onclick="location.href='{{ url_for('product_detail', product_id=product.id) }}'">
+            <div class="product-image">
+                <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
+                <span class="best-seller-badge">Best Seller</span>
+                {% if product.discount > 0 %}
+                <span class="discount-badge">{{ product.discount }}% OFF</span>
+                {% endif %}
+            </div>
+            <div class="product-info">
+                <div class="title-price">
+                    <h3>{{ product.name[:30] }}{% if product.name|length > 30 %}...{% endif %}</h3>
+                    <span class="price">₹{{ product.price }}</span>
+                </div>
+                <div class="rating">
+                    {% for i in range(5) %}
+                        {% if i < product.rating|int %}
+                            <i class="fa-solid fa-star"></i>
+                        {% else %}
+                            <i class="fa-regular fa-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                    <span class="rating-count">({{ product.reviews_count }})</span>
+                </div>
+                {% if product.compare_price and product.compare_price > product.price %}
+                <div class="price-compare">
+                    <span class="original-price">₹{{ product.compare_price }}</span>
+                    <span class="discount-percent">{{ product.discount }}% off</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="no-products">
+            <p>No products available.</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="container">
+    <div class="specs-header">
+        <h2>Our Specifications</h2>
+        <p>We offer top-tier service and convenience to ensure your shopping experience is smooth and secure.</p>
+    </div>
+
+    <div class="specs-grid">
+        <div class="spec-card green">
+            <div class="icon-box"><i class="fa-solid fa-paper-plane"></i></div>
+            <h3>Free Shipping</h3>
+            <p>Enjoy fast, free delivery on every order.</p>
+        </div>
+        <div class="spec-card orange">
+            <div class="icon-box"><i class="fa-solid fa-clock"></i></div>
+            <h3>7 Days Return</h3>
+            <p>Change your mind? Return within 7 days.</p>
+        </div>
+        <div class="spec-card purple">
+            <div class="icon-box"><i class="fa-solid fa-headphones"></i></div>
+            <h3>24/7 Support</h3>
+            <p>We're here for you whenever you need help.</p>
+        </div>
+    </div>
+
+    <div class="newsletter-section">
+        <h2>Join Newsletter</h2>
+        <p>Subscribe to get exclusive deals and insider updates.</p>
+        <div class="input-container">
+            <input type="email" placeholder="Enter your email address">
+            <button class="btn-update">Get Updates</button>
+        </div>
+    </div>
+</section>
+
+<style>
+.best-seller-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #1a848c;
+    color: #ffffff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    z-index: 2;
+}
+
+.discount-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #71af34;
+    color: rgb(255, 255, 255);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    z-index: 2;
+}
+
+.category-item {
+    text-decoration: none;
+    color: #555;
+    padding: 5px 10px;
+    transition: color 0.3s;
+}
+
+.category-item:hover {
+    color: #2874f0;
+}
+
+.price-compare {
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #999;
+    margin-right: 8px;
+}
+
+.discount-percent {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.no-products {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+</style>
+{% endblock %}

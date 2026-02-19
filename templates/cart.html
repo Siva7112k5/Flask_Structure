@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}My Cart - Triowise{% endblock %}
+{% block content %}
+<div class="cart-page">
+    <div class="cart-header">
+        <h1>My Cart</h1>
+        <p>{{ cart_items|length }} items in your cart <a href="{{ url_for('home') }}" class="add-more">Add more →</a></p>
+    </div>
+
+    <div class="cart-layout">
+        <!-- Left side: Cart items -->
+        <div class="cart-items">
+            {% if cart_items %}
+                {% for item in cart_items %}
+                <div class="cart-item" data-id="{{ item.id }}">
+                    <div class="item-image">
+                        <img src="{{  url_for('static', filename=item.image) }}" alt="{{ item.name }}">
+                    </div>
+                    <div class="item-details">
+                        <h3>{{ item.name }}</h3>
+                        <p class="item-category">{{ item.description or 'Decoration' }}</p>
+                        <p class="item-price">₹{{ item.price }}</p>
+                        <div class="item-quantity">
+                            <button class="qty-btn minus">-</button>
+                            <input type="number" class="qty-input" value="{{ item.quantity }}" min="1" readonly>
+                            <button class="qty-btn plus">+</button>
+                        </div>
+                        <div class="item-total">
+                            <span>Total Price</span>
+                            <span class="total-price">₹{{ item.price * item.quantity }}</span>
+                        </div>
+                        <button class="remove-item"><i class="fa-regular fa-trash-can"></i> Remove</button>
+                    </div>
+                </div>
+                <hr>
+                {% endfor %}
+            {% else %}
+                <p class="empty-cart">Your cart is empty. <a href="{{ url_for('home') }}">Continue shopping</a></p>
+            {% endif %}
+        </div>
+
+        <!-- Right side: Payment Summary -->
+        <div class="payment-summary">
+            <h3>Payment Summary</h3>
+            <div class="payment-method">
+                <p>Payment Method</p>
+                <div class="method-options">
+                    <label><input type="radio" name="payment" value="credit"> Credit Card</label>
+                    <label><input type="radio" name="payment" value="upi"> UPI</label>
+                    <label><input type="radio" name="payment" value="cod"> Cash on Delivery</label>
+                </div>
+            </div>
+            <div class="address-section">
+                <p>Address</p>
+                <select class="address-select">
+                   <option value="nagercoil">Nagercoil</option>
+
+  <option value="agastheeswaram">Agastheeswaram</option>
+  <option value="anjugramam">Anjugramam</option>
+  <option value="aralvaimozhi">Aralvaimozhi</option>
+  <option value="arumanai">Arumanai</option>
+  <option value="attoor">Attoor</option>
+  <option value="azhagappapuram">Azhagappapuram</option>
+  <option value="azhagiapandipuram">Azhagiapandipuram</option>
+  <option value="boothapandi">Boothapandi</option>
+  <option value="edaicode">Edaicode</option>
+  <option value="eraniel">Eraniel</option>
+  <option value="ganapathipuram">Ganapathipuram</option>
+  <option value="kadayal">Kadayal</option>
+  <option value="kaliyakkavilai">Kaliyakkavilai</option>
+  <option value="kallukuttam">Kallukuttam</option>
+  <option value="kappiyarai">Kappiyarai</option>
+  <option value="karungal">Karungal</option>
+  <option value="keezhkulam">Keezhkulam</option>
+  <option value="killiyoor">Killiyoor</option>
+  <option value="kothanallur">Kothanallur</option>
+  <option value="kottaram">Kottaram</option>
+  <option value="kulasekaram">Kulasekaram</option>
+  <option value="kumarapuram">Kumarapuram</option>
+  <option value="mandaikadu">Mandaikadu</option>
+  <option value="manavalakurichi">Manavalakurichi</option>
+  <option value="marungur">Marungur</option>
+  <option value="mulagumudu">Mulagumudu</option>
+  <option value="mylaudy">Mylaudy</option>
+  <option value="nalloor">Nalloor</option>
+  <option value="neyyoor">Neyyoor</option>
+  <option value="pacode">Pacode</option>
+  <option value="palapallam">Palapallam</option>
+  <option value="palugal">Palugal</option>
+  <option value="ponmanai">Ponmanai</option>
+  <option value="puthalam">Puthalam</option>
+  <option value="puthukkadai">Puthukkadai</option>
+  <option value="reethapuram">Reethapuram</option>
+  <option value="south-thamaraikulam">South Thamaraikulam</option>
+  <option value="suchindram">Suchindram</option>
+  <option value="thazhakudi">Thazhakudi</option>
+  <option value="theroor">Theroor</option>
+  <option value="thingalnagar">Thingalnagar</option>
+  <option value="thiruparappu">Thiruparappu</option>
+  <option value="thiruvattar">Thiruvattar</option>
+   <option value="thovalai">Thovalai</option>
+  <option value="thiruvithancode">Thiruvithancode</option>
+  <option value="unnamalaikadai">Unnamalaikadai</option>
+  <option value="valvachagostam">Valvachagostam</option>
+  <option value="vellimalai">Vellimalai</option>
+  <option value="verkilambi">Verkilambi</option>
+  <option value="vilavoor">Vilavoor</option>
+  <option value="villukuri">Villukuri</option>
+                </select>
+                <a href="#" class="add-address">+ Add Address</a>
+            </div>
+            <div class="price-breakdown">
+                <div class="row">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">₹{{ subtotal }}</span>
+                </div>
+                <div class="row">
+                    <span>Shipping:</span>
+                    <span>Free</span>
+                </div>
+                <div class="coupon">
+                    <input type="text" placeholder="Coupon Code">
+                    <button>Apply</button>
+                </div>
+                <div class="row total">
+                    <span>Total:</span>
+                    <span id="total">₹{{ subtotal }}</span>
+                </div>
+            </div>
+            
+            <button class="place-order">Place Order</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if user is logged in from the hidden element
+    const authElement = document.getElementById('user-auth-status');
+    const isAuthenticated = authElement ? authElement.dataset.authenticated === 'true' : false;
+    
+    // Quantity buttons
+    document.querySelectorAll('.minus').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const input = this.nextElementSibling;
+            let qty = parseInt(input.value);
+            if (qty > 1) {
+                qty--;
+                input.value = qty;
+                updateCart(this.closest('.cart-item'), qty);
+            }
+        });
+    });
+
+    document.querySelectorAll('.plus').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const input = this.previousElementSibling;
+            let qty = parseInt(input.value);
+            qty++;
+            input.value = qty;
+            updateCart(this.closest('.cart-item'), qty);
+        });
+    });
+
+    function updateCart(itemElement, quantity) {
+        const productId = itemElement.dataset.id;
+        const price = parseFloat(itemElement.querySelector('.item-price').textContent.replace('$', ''));
+        const totalSpan = itemElement.querySelector('.total-price');
+        const subtotalSpan = document.getElementById('subtotal');
+        const totalSpanGlobal = document.getElementById('total');
+
+        fetch(`/update-cart/${productId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ quantity: quantity })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                totalSpan.textContent = `$${data.item_total.toFixed(2)}`;
+                subtotalSpan.textContent = `$${data.subtotal.toFixed(2)}`;
+                totalSpanGlobal.textContent = `$${data.subtotal.toFixed(2)}`;
+                document.querySelector('.cart-count').textContent = data.cart_count;
+            }
+        });
+    }
+
+    // Remove item
+    document.querySelectorAll('.remove-item').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const item = this.closest('.cart-item');
+            const productId = item.dataset.id;
+            if (confirm('Remove this item from cart?')) {
+                fetch(`/remove-from-cart/${productId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        item.remove();
+                        document.querySelector('.cart-count').textContent = data.cart_count;
+                        window.location.reload();
+                    }
+                });
+            }
+        });
+    });
+
+    // Place order with real checkout
+    document.querySelector('.place-order')?.addEventListener('click', function() {
+        // Check if user is logged in using the JavaScript variable
+        if (!isAuthenticated) {
+            alert('Please login to place your order');
+            window.location.href = '/login';
+            return;
+        }
+        
+        // Get selected payment method
+        const paymentMethod = document.querySelector('input[name="payment"]:checked');
+        if (!paymentMethod) {
+            alert('Please select a payment method');
+            return;
+        }
+        
+        // Get selected address
+        const addressSelect = document.querySelector('.address-select');
+        if (!addressSelect || !addressSelect.value) {
+            alert('Please select an address');
+            return;
+        }
+        
+        // Show loading state
+        this.textContent = 'Placing Order...';
+        this.disabled = true;
+        
+        // Prepare order data
+        const orderData = {
+            payment_method: paymentMethod.value,
+            address: addressSelect.value,
+        };
+        
+        // Send order to server
+        fetch('/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(orderData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Redirect to order confirmation page
+                window.location.href = `/order-confirmed/${data.order_id}`;
+            } else {
+                alert('Error: ' + data.error);
+                this.textContent = 'Place Order';
+                this.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to place order. Please try again.');
+            this.textContent = 'Place Order';
+            this.disabled = false;
+        });
+    });
+});
+
+</script>
+{% endblock %}

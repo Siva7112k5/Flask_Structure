@@ -1,0 +1,1233 @@
+<!-- <!-- base.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Triowise Plus | Online Shopping{% endblock %}</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/jpg" href="{{ url_for('static', filename='images/TW_logo1.png') }}">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="logo">
+            <span class="logo-main"><span class="logocolor">Trio</span>wise<span class="logo-badge">plus</span></span>
+        </div>
+
+        <nav class="nav-links">
+            <a href="{{ url_for('home') }}" class="active">Home</a>
+            
+            <a href="#">Shop</a>
+            <a href="#">About</a>
+            <a href="#">Contact</a>
+        </nav>
+
+        <div class="search-container">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" placeholder="Search products">
+        </div>
+
+ <div class="nav-actions">
+    <div class="cart-btn">
+        <div class="cart-icon-wrapper">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <span class="cart-count">0</span>
+        </div>
+        <span>Cart</span>
+    </div>
+
+    {% if session.get('user_id') %}
+        {% if session.get('role') == 'admin' %}
+            <button class="menu-btn" onclick="toggleSidebar()" style="background:none; border:none; cursor:pointer; font-size:1.2rem;">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        {% endif %}
+        <a href="{{ url_for('logout') }}" class="login-btn">Logout</a>
+    {% else %}
+        <a href="{{ url_for('login') }}" class="login-btn">Login</a>
+    {% endif %}
+</div>
+        
+       
+</div>
+
+<div id="sidebar" class="side-nav">
+    <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
+    <a href="{{ url_for('dashboard') }}"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+    <a href="#">Shop</a>
+    <a href="#">Profile</a>
+</div>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col brand-info">
+                <div class="logo">
+                    <span class="logo-main"><span class="logocolor">Trio</span>wise</span><span class="logo-badge">plus</span>
+                </div>
+                <p>Welcome to Triowise, your ultimate destination for the latest and smartest gadgets.</p>
+                <div class="social-icons">
+                    <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>PRODUCTS</h4>
+                <ul>
+                    <li><a href="#">Earphones</a></li>
+                    <li><a href="#">Headphones</a></li>
+                    <li><a href="#">Smartphones</a></li>
+                    <li><a href="#">Laptops</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>WEBSITE</h4>
+                <ul>
+                    <li><a href="{{ url_for('home') }}">Home</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Become Plus Member</a></li>
+                    <li><a href="#">Create Your Store</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>CONTACT</h4>
+                <ul class="contact-list">
+                    <li><i class="fa-solid fa-envelope"></i> +91-9043345140</li>
+                    <li><i class="fa-solid fa-phone"></i> ksiva2005@gmail.com</li>
+                    <li><i class="fa-solid fa-location-dot"></i> Tamilnadu|Kanyakumari|Thovalai,629302</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>Copyright 2026 © Triowise All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
+
+<!-- index -->
+
+{% extends "base.html" %}
+
+{% block title %}Triowise Plus | Online Shopping{% endblock %}
+
+{% block content %}
+<section class="hero-container">
+    <div class="main-banner">
+        <div class="banner-content">
+            <div class="news-pill">
+                <span class="badge">NEWS</span>
+                <span class="text">Free Shipping on Orders Above ₹50! <i class="fa-solid fa-chevron-right"></i></span>
+            </div>
+            <h1>Gadgets you'll love.<br>Prices you'll trust.</h1>
+            <p class="price-start">Starts from <br> <strong>₹100</strong></p>
+            <button class="learn-more">LEARN MORE</button>
+        </div>
+        <img src="{{ url_for('static', filename='images/hero_model_img.png') }}" alt="Hero Model" class="hero-img">
+    </div>
+
+    <div class="side-banners">
+        <div class="side-card peach">
+            <div class="side-content">
+                <h2>Best<br>products</h2>
+                <a href="#" class="view-more">View more <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <img src="{{ url_for('static', filename='images/hero_product_img1.png') }}" alt="Earbuds">
+        </div>
+
+        <div class="side-card blue">
+            <div class="side-content">
+                <h2>20%<br>discounts</h2>
+                <a href="#" class="view-more">View more <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <img src="{{ url_for('static', filename='images/hero_product_img2.png') }}" alt="Smart Watch">
+        </div>
+    </div>
+</section>
+
+<section class="category-marquee">
+    <div class="marquee-content">
+        {% for category in ['Appliances', 'Home & Kitchen', 'Fashion', 'Sports', 'Beauty', 'Toys', 'Books', 'Furniture', 'Bags', 'Mobiles', 'Laptop', 'Watch', 'Men Dresses', 'Woman Dresses', 'Decorations', 'Pets care', 'Bathing products', 'Skin care', 'Face care', 'Shoes', 'Mens Accesories', 'Women Accesories', 'Gifts', 'Hair care'] %}
+        <div class="category-item">{{ category }}</div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="latest-products">
+    <div class="section-header">
+        <h2>Latest Products</h2>
+        <div class="section-subheader">
+            <span>Showing 4 of 12 products</span>
+            <a href="#" class="view-more-link">View more <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <div class="product-grid">
+        <div class="product-card">
+            <div class="product-image"><img src="{{ url_for('static', filename='images/product_img9.png') }}" alt="Product"></div>
+            <div class="product-info">
+                <div class="title-price"><h3>Modern table lamp</h3><span class="price">₹299</span></div>
+                <div class="rating">{% for i in range(5) %}<i class="fa-solid fa-star"></i>{% endfor %}</div>
+            </div>
+        </div>
+        <div class="product-card">
+            <div class="product-image"><img src="{{ url_for('static', filename='images/product_img9.png') }}" alt="Product"></div>
+            <div class="product-info">
+                <div class="title-price"><h3>Smart speaker gray</h3><span class="price">₹259</span></div>
+                <div class="rating">{% for i in range(5) %}<i class="fa-solid fa-star"></i>{% endfor %}</div>
+            </div>
+        </div>
+        <div class="product-card">
+            <div class="product-image"><img src="{{ url_for('static', filename='images/product_img10.png') }}" alt="Product"></div>
+            <div class="product-info">
+                <div class="title-price"><h3>Smart watch white</h3><span class="price">₹869</span></div>
+                <div class="rating">{% for i in range(5) %}<i class="fa-solid fa-star"></i>{% endfor %}</div>
+            </div>
+        </div>
+        <div class="product-card">
+            <div class="product-image"><img src="{{ url_for('static', filename='images/product_img9.png') }}" alt="Product"></div>
+            <div class="product-info">
+                <div class="title-price"><h3>Wireless headphones</h3><span class="price">₹345</span></div>
+                <div class="rating">{% for i in range(5) %}<i class="fa-solid fa-star"></i>{% endfor %}</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="latest-products">
+    <div class="section-header">
+        <h2>Best Selling</h2>
+        <div class="section-subheader">
+            <span>Showing 8 of 12 products</span>
+            <a href="#" class="view-more-link">View more <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <div class="product-grid">
+        {% for i in range(4) %}
+        <div class="product-card">
+            <div class="product-image"><img src="{{ url_for('static', filename='images/product_img9.png') }}" alt="Product"></div>
+            <div class="product-info">
+                <div class="title-price"><h3>Premium Product</h3><span class="price">₹345</span></div>
+                <div class="rating"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="container">
+    <div class="specs-header">
+        <h2>Our Specifications</h2>
+        <p>We offer top-tier service and convenience to ensure your shopping experience is smooth and secure.</p>
+    </div>
+
+    <div class="specs-grid">
+        <div class="spec-card green">
+            <div class="icon-box"><i class="fa-solid fa-paper-plane"></i></div>
+            <h3>Free Shipping</h3>
+            <p>Enjoy fast, free delivery on every order.</p>
+        </div>
+        <div class="spec-card orange">
+            <div class="icon-box"><i class="fa-solid fa-clock"></i></div>
+            <h3>7 Days Return</h3>
+            <p>Change your mind? Return within 7 days.</p>
+        </div>
+        <div class="spec-card purple">
+            <div class="icon-box"><i class="fa-solid fa-headphones"></i></div>
+            <h3>24/7 Support</h3>
+            <p>We're here for you whenever you need help.</p>
+        </div>
+    </div>
+
+    <div class="newsletter-section">
+        <h2>Join Newsletter</h2>
+        <p>Subscribe to get exclusive deals and insider updates.</p>
+        <div class="input-container">
+            <input type="email" placeholder="Enter your email address">
+            <button class="btn-update">Get Updates</button>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+<!-- register -->
+
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-container">
+    <form action="/login" method="POST" class="auth-form">
+        <h2>Login</h2>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <select name="role">
+    <option value="user">User</option>
+    <option value="admin">Admin</option>
+</select>
+        <button type="submit" class="login-btn">Login</button>
+        <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+    </form>
+</div>
+{% endblock %}
+<!-- login -->
+
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-container">
+    <form action="/login" method="POST" class="auth-form">
+        <h2>Login</h2>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit" class="login-btn">Login</button>
+        <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+    </form>
+</div>
+{% endblock %}
+
+
+<!--style.css-->
+
+
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: #fcfcfc;
+}
+
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 5%;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+/* Logo Styling */
+.logo {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.logo-main {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1e3932; /* Dark green/teal tone */
+    letter-spacing: -1px;
+}
+.logocolor{
+    color:#00b853;
+    font-style:italic;
+}
+
+.logo-badge {
+    background-color: #00b853; /* The green "plus" pill */
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 4px;
+    margin-top: -10px;
+   
+    border-color: rgb(0, 0, 0);
+}
+
+/* Nav Links */
+.nav-links a {
+    text-decoration: none;
+    color: #555;
+    margin: 0 15px;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.nav-links a:hover, .nav-links a.active {
+    color: #000;
+}
+
+/* Search Bar */
+.search-container {
+    position: relative;
+    flex: 0 1 300px; /* Limits width */
+    margin: 0 20px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 10px 10px 10px 45px;
+    border-radius: 25px;
+    border: none;
+    background-color: #f1f3f5;
+    outline: none;
+    font-size: 14px;
+}
+
+/* Cart & Login */
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.cart-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #444;
+    font-weight: 500;
+}
+
+.cart-icon-wrapper {
+    position: relative;
+}
+
+.cart-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #444;
+    color: white;
+    font-size: 10px;
+    padding: 2px 5px;
+    border-radius: 50%;
+}
+
+.login-btn {
+    background-color: #6366f1; /* Purple button */
+    color: white;
+    border: none;
+    padding: 10px 35px;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.login-btn:hover {
+    background-color: #4f46e5;
+}
+
+/* Hero Container Layout */
+.hero-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* 2 parts for main, 1 part for side cards */
+    gap: 20px;
+    padding: 20px 5%;
+}
+
+/* Main Banner (Green) */
+.main-banner {
+    background-color: #bbf7d0; /* Mint Green */
+    border-radius: 30px;
+    padding: 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.news-pill {
+    background: rgba(255, 255, 255, 0.4);
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 15px 5px 5px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+}
+
+.news-pill .badge {
+    background: #00b853;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 10px;
+}
+
+.news-pill .text {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1e3932;
+}
+
+.main-banner h1 {
+    font-size: 42px;
+    line-height: 1.1;
+    color: #1e3932;
+    margin-bottom: 20px;
+}
+
+.price-start {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.price-start strong {
+    font-size: 28px;
+    display: block;
+}
+
+.learn-more {
+    background: #1e293b;
+    color: white;
+    border: none;
+    padding: 15px 35px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hero-img {
+    height: 100%;
+    max-height: 400px;
+}
+
+/* Side Banners Column */
+.side-banners {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.side-card {
+    border-radius: 30px;
+    padding: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+.side-card.peach { background-color: #fed7aa; }
+.side-card.blue { background-color: #dbeafe; }
+
+.side-card h2 {
+    font-size: 24px;
+    color: #1e3932;
+    margin-bottom: 10px;
+}
+
+.view-more {
+    text-decoration: none;
+    color: #444;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.side-card img {
+    width: 100px;
+}
+
+/* Responsive for smaller screens */
+@media (max-width: 900px) {
+    .hero-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.category-marquee {
+    width: 100%;
+    overflow: hidden; /* Hides the items outside the screen */
+    background-color: #fff;
+    padding: 40px 0;
+    white-space: nowrap;
+    position: relative;
+}
+
+/* Gradient fade on edges to match the screenshot */
+.category-marquee::before,
+.category-marquee::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 100px;
+    height: 100%;
+    z-index: 2;
+}
+
+.category-marquee::before {
+    left: 0;
+    background: linear-gradient(to right, white, transparent);
+}
+
+.category-marquee::after {
+    right: 0;
+    background: linear-gradient(to left, white, transparent);
+}
+
+.marquee-content {
+    display: inline-flex;
+    animation: scroll 30s linear infinite; /* Adjust '30s' for speed */
+}
+
+.category-item {
+    background-color: #f1f5f9; /* Light blue-grey tint from your image */
+    color: #64748b;
+    padding: 12px 30px;
+    margin: 0 10px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.category-item:hover {
+    background-color: #e2e8f0;
+    color: #1e293b;
+}
+
+/* The Magic Animation */
+@keyframes scroll {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%); /* Moves halfway through the duplicated list */
+    }
+}
+
+/* Pause on hover so users can click */
+.marquee-content:hover {
+    animation-play-state: paused;
+}
+
+.latest-products {
+    padding: 60px 5%;
+    text-align: center;
+}
+
+.section-header h2 {
+    font-size: 22px;
+    color: #323a46;
+    margin-bottom: 10px;
+}
+
+.section-subheader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 40px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.view-more-link {
+    color: #00b853; /* Matching the "plus" green */
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* Grid Layout */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+}
+
+.product-card {
+    text-align: left;
+    cursor: pointer;
+}
+
+.product-image {
+    background-color: #f1f3f5; /* Light grey background from screenshot */
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    margin-bottom: 15px;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image {
+    transform: translateY(-5px);
+}
+
+.product-image img {
+    max-width: 100%;
+    height: auto;
+    mix-blend-mode: multiply; /* Helps transparent product images blend in */
+}
+
+/* Info Section */
+.title-price {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 5px;
+}
+
+.title-price h3 {
+    font-size: 16px;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.price {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.rating {
+    color: #00b853; /* Green stars */
+    font-size: 12px;
+}
+
+:root {
+  --primary-font: 'Inter', sans-serif; /* Use a clean sans-serif font */
+  --bg-green: #f0fdf4;
+  --bg-orange: #fff7ed;
+  --bg-purple: #f5f3ff;
+  --border-green: #bbf7d0;
+  --border-orange: #ffedd5;
+  --border-purple: #ddd6fe;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 50px auto;
+  padding: 20px;
+  font-family: var(--primary-font);
+  text-align: center;
+}
+
+/* Header Styles */
+.specs-header h2, .newsletter-section h2 {
+  font-size: 2rem;
+  color:  #273b53;
+  margin-bottom: 10px;
+}
+
+.specs-header p, .newsletter-section p {
+  color: #64748b;
+  max-width: 600px;
+  margin: 0 auto 40px;
+  line-height: 1.6;
+}
+
+/* Specs Grid */
+.specs-grid {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 80px;
+}
+
+.spec-card {
+  flex: 1;
+  min-width: 300px;
+  padding: 40px 30px;
+  border-radius: 12px;
+  position: relative;
+  border: 1px solid transparent;
+}
+
+.spec-card h3 {
+  margin: 20px 0 10px;
+  color: #1e293b;
+}
+
+.spec-card p {
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+/* Card Variations */
+.green { background-color: var(--bg-green); border-color: var(--border-green); }
+.orange { background-color: var(--bg-orange); border-color: var(--border-orange); }
+.purple { background-color: var(--bg-purple); border-color: var(--border-purple); }
+
+/* Icon Styling */
+.icon-box {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+.green .icon-box { background-color: #00d26a; }
+.orange .icon-box { background-color: #ff8a00; }
+.purple .icon-box { background-color: #a855f7; }
+
+/* Newsletter Section */
+.newsletter-section {
+  margin-top: 60px;
+}
+
+.input-container {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 50px;
+  padding: 8px 8px 8px 25px;
+  display: flex;
+  max-width: 600px;
+  margin: 0 auto;
+  align-items: center;
+}
+
+.input-container input {
+  border: none;
+  background: transparent;
+  flex: 1;
+  outline: none;
+  font-size: 1rem;
+}
+
+.btn-update {
+  background-color: #00c853;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.btn-update:hover {
+  opacity: 0.9;
+}
+
+
+/* --- FOOTER STYLES --- */
+.footer {
+    background-color: #fff;
+    padding: 80px 5% 20px 5%;
+    border-top: 1px solid #eee;
+    color: #64748b;
+}
+
+.footer-container {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+    gap: 40px;
+    margin-bottom: 60px;
+}
+
+.footer-col h4 {
+    color: #1e293b;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 25px;
+    letter-spacing: 1px;
+}
+
+.footer-col p {
+    line-height: 1.6;
+    font-size: 14px;
+    margin-top: 20px;
+}
+
+.footer-col ul {
+    list-style: none;
+}
+
+.footer-col ul li {
+    margin-bottom: 12px;
+}
+
+.footer-col ul li a {
+    text-decoration: none;
+    color: #64748b;
+    font-size: 14px;
+    transition: color 0.3s;
+}
+
+.footer-col ul li a:hover {
+    color: #00b853;
+}
+
+/* Social Icons Round Style */
+.social-icons {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.social-icons a {
+    width: 35px;
+    height: 35px;
+    background: #f1f5f9;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    text-decoration: none;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.social-icons a:hover {
+    background: #6366f1;
+    color: #fff;
+}
+
+.contact-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+/* Bottom Bar */
+.footer-bottom {
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+    text-align: left;
+    font-size: 13px;
+}
+
+/* --- PRODUCT IMAGE SIZE FIX --- */
+.product-image-container {
+    background-color: #f1f3f5;
+    border-radius: 20px;
+    width: 100%;
+    aspect-ratio: 1 / 1; /* Makes every box a perfect square */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+    overflow: hidden;
+}
+
+.product-image-container img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain; /* Keeps original shape without stretching */
+}
+/* 1. Global Updates for Fluidity */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* 2. Responsive Navbar */
+@media (max-width: 768px) {
+    .navbar {
+        flex-wrap: wrap;
+        padding: 10px 5%;
+    }
+
+    .search-container {
+        order: 3; /* Moves search bar below logo/actions on mobile */
+        flex: 0 0 100%;
+        margin: 15px 0 0 0;
+    }
+
+    .nav-links {
+        display: none; /* Usually hidden behind a hamburger menu on mobile */
+    }
+
+    .logo-main {
+        font-size: 22px;
+    }
+}
+
+/* 3. Hero Section Refinement */
+@media (max-width: 1024px) {
+    .hero-container {
+        grid-template-columns: 1fr; /* Stack main banner and side cards */
+    }
+    
+    .main-banner {
+        padding: 30px;
+    }
+
+    .main-banner h1 {
+        font-size: 32px;
+    }
+}
+
+@media (max-width: 600px) {
+    .main-banner {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .hero-img {
+        max-height: 250px;
+        margin-top: 20px;
+    }
+
+    .side-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+}
+
+/* 4. Product Grid & Specs */
+@media (max-width: 768px) {
+    .product-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* Smaller cards for mobile */
+        gap: 15px;
+    }
+
+    .specs-grid {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .spec-card {
+        width: 100%;
+        min-width: unset;
+    }
+}
+
+/* 5. Newsletter Input */
+@media (max-width: 480px) {
+    .input-container {
+        flex-direction: column;
+        border-radius: 15px;
+        padding: 15px;
+        gap: 10px;
+    }
+
+    .btn-update {
+        width: 100%;
+    }
+}
+
+/* 6. Footer Layout */
+@media (max-width: 900px) {
+    .footer-container {
+        grid-template-columns: 1fr 1fr; /* 2 columns on tablets */
+    }
+}
+
+@media (max-width: 500px) {
+    .footer-container {
+        grid-template-columns: 1fr; /* 1 column on phones */
+        text-align: center;
+    }
+
+    .social-icons {
+        justify-content: center;
+    }
+
+    .contact-list li {
+        justify-content: center;
+    }
+}
+
+.side-nav {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 1001; /* Higher than navbar */
+    top: 0;
+    left: 0;
+    background-color: #1a1a1a;
+    overflow-x: hidden;
+    transition: 0.3s;
+    padding-top: 60px;
+}
+
+
+.side-nav a {
+    padding: 15px 25px;
+    text-decoration: none;
+    font-size: 18px;
+    color: #818181;
+    display: block;
+    transition: 0.3s;
+}
+
+.side-nav a:hover { color: #f1f1f1; }
+
+.side-nav .closebtn {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+}
+
+/* Auth Form Styles */
+.auth-container {
+    display: flex;
+    justify-content: center;
+    padding: 50px 20px;
+}
+
+.auth-form {
+    background: #f9f9f9;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.auth-form input, .auth-form select {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+/* Ensure the navbar stays horizontal */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 5%;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Gives space between Cart, Menu, and Login */
+}
+
+/* Fix the Login/Logout Button size */
+.login-btn {
+    background-color: #6366f1;
+    color: white;
+    padding: 8px 24px;
+    border-radius: 20px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* Sidebar Menu Button */
+.menu-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #333;
+}
+</style>
+
+<!-- script.js -->
+
+// Change active state on click
+
+// Login button interaction
+//document.querySelector('.login-btn').addEventListener('click', () => {
+  //  alert('Redirecting to Triwise Login...');
+//});
+
+
+function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar.style.width === "250px") {
+        sidebar.style.width = "0";
+    } else {
+        sidebar.style.width = "250px";
+    }
+}
+
+// Ensure the active class works on nav links
+const navLinks = document.querySelectorAll('.nav-links a');
+navLinks.forEach(link => {
+    link.addEventListener('click', function() {
+        navLinks.forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+    });
+});
+
+<!-- app.py -->
+
+from flask import Flask, render_template, request, redirect, url_for, session
+
+app = Flask(__name__)
+app.secret_key = 'triowise_plus_secret' # Keeps your login session safe
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        # In a real app, you'd check a database here
+        session['user_id'] = request.form.get('email')
+        # We simulate fetching the role (User or Admin)
+        session['role'] = request.form.get('role', 'user') 
+        return redirect(url_for('home'))
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        # After registering, redirect them to login
+        return redirect(url_for('login'))
+    return render_template('register.html')
+
+@app.route('/logout')
+def logout():
+    session.clear() # Removes the user, button changes back to 'Login'
+    return redirect(url_for('home'))
+
+@app.route('/dashboard')
+def dashboard():
+    if session.get('role') == 'admin':
+        return render_template('dashboard.html')
+    return redirect(url_for('home'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+   // dashboard.html
+
+    {% extends "base.html" %}
+{% block content %}
+<div style="padding: 100px; text-align: center;">
+    <h1>Admin Dashboard</h1>
+    <p>Welcome back, Boss! Manage your products here.</p>
+</div>
+{% endblock %} -->

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Triowise Plus | Online Shopping{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/jpg" href="{{ url_for('static', filename='images/TW_logo1.png') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+ 
+</head>
+<body>
+    <!-- Side Nav for Admin (hidden by default) -->
+    <div id="sideNav" class="sidenav">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+        <a href="#">Manage Products</a>
+        <a href="#">Orders</a>
+        <a href="#">Users</a>
+    </div>
+
+    <header class="navbar">
+        <div class="logo">
+            <span class="logo-main"><span class="logocolor">Trio</span>wise<span class="logo-badge">plus</span></span>
+        </div>
+
+        <nav class="nav-links">
+          <!-- Hamburger Menu Button (visible only on mobile) -->
+<button class="menu-toggle" id="menuToggle">
+    <i class="fa-solid fa-bars"></i>
+</button>
+
+<nav class="nav-links" id="navLinks">
+    <a href="{{ url_for('home') }}" class="{{ 'active' if request.endpoint == 'home' else '' }}">Home</a>
+    <a href="{{ url_for('all_products') }}" class="{{ 'active' if request.endpoint == 'all_products' else '' }}">Shop</a>
+    <a href="{{ url_for('about') }}" class="{{ 'active' if request.endpoint == 'about' else '' }}">About</a>
+    <a href="{{ url_for('contact') }}" class="{{ 'active' if request.endpoint == 'contact' else '' }}">Contact</a>
+
+        </nav>
+
+
+<form action="{{ url_for('search') }}" method="GET" class="search-container">
+    <button type="submit" style="background:none; border:none; cursor:pointer;">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+    </button>
+    <input type="text" name="q" id="search-input" placeholder="Search products" 
+           value="{{ request.args.get('q', '') }}">
+</form>
+
+<!-- Hidden element to store user authentication status -->
+<span id="user-auth-status" data-authenticated="{% if current_user.is_authenticated %}true{% else %}false{% endif %}" style="display: none;"></span>
+
+        <div class="nav-actions">
+          <div class="cart-btn" onclick="window.location.href='{{ url_for('cart') }}'">
+    <div class="cart-icon-wrapper">
+        <i class="fa-solid fa-cart-shopping"></i>
+        <span class="cart-count">{{ session.get('cart', [])|length }}</span>
+    </div>
+    <span>Cart</span>
+</div>
+            {% if current_user.is_authenticated %}
+                <!-- Show logout button and admin menu if admin -->
+                {% if current_user.role == 'admin' %}
+                    <button class="menu-btn" onclick="openNav()">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                {% endif %}
+                <a href="{{ url_for('logout') }}" class="login-btn logout-btn">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="login-btn">Login</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+   
+
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col brand-info">
+                <div class="logo">
+                    <span class="logo-main"><span class="logocolor">Trio</span>wise</span><span class="logo-badge">plus</span>
+                </div>
+                <p>Welcome to Triowise, your ultimate destination for the latest and smartest gadgets.</p>
+                <div class="social-icons">
+                    <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>PRODUCTS</h4>
+                <ul>
+                    <li><a href="#">Earphones</a></li>
+                    <li><a href="#">Headphones</a></li>
+                    <li><a href="#">Smartphones</a></li>
+                    <li><a href="#">Laptops</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>WEBSITE</h4>
+                <ul>
+                    <li><a href="{{ url_for('home') }}">Home</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Become Plus Member</a></li>
+                    <li><a href="#">Create Your Store</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>CONTACT</h4>
+                <ul class="contact-list">
+                    <li><i class="fa-solid fa-envelope"></i> +91-9043345140</li>
+                    <li><i class="fa-solid fa-phone"></i> ksiva2005@gmail.com</li>
+                    <li><i class="fa-solid fa-location-dot"></i> Tamilnadu|Kanyakumari|Thovalai,629302</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>Copyright 2026 © Triowise All Rights Reserved.</p>
+        </div>
+    </footer>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+    // User authentication status - Safe version
+    {% if current_user.is_authenticated %}
+        const USER_AUTHENTICATED = true;
+        const USER_ID = {{ current_user.id }};
+        const USER_ROLE = "{{ current_user.role }}";
+    {% else %}
+        const USER_AUTHENTICATED = false;
+        const USER_ID = null;
+        const USER_ROLE = "";
+    {% endif %}
+
+
+
+    
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const searchIcon = document.querySelector('.search-icon');
+    
+    function performSearch() {
+        const query = searchInput.value.trim();
+        console.log('Searching for:', query); // Debug in browser console
+        if (query) {
+            window.location.href = `/search?q=${encodeURIComponent(query)}`;
+        } else {
+            alert('Please enter a search term');
+        }
+    }
+    
+    if (searchIcon) {
+        searchIcon.addEventListener('click', performSearch);
+    }
+    
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+    }
+});
+</script>
+</body>
+</html>

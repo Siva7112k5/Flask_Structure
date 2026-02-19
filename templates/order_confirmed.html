@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% block title %}Order Confirmed - Triowise{% endblock %}
+{% block content %}
+<div class="order-confirmed-page">
+    <div class="confirmation-box">
+        <div class="success-animation">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        
+        <h1>Order Confirmed!</h1>
+        <p class="order-number">Order #{{ order.order_number }}</p>
+        <p class="thank-you">Thank you for shopping with Triowise</p>
+        
+        <div class="order-details">
+            <h2>Order Details</h2>
+            
+            <div class="order-summary">
+                <div class="summary-row">
+                    <span>Order Date:</span>
+                    <span>{{ order.created_at.strftime('%d %B %Y, %I:%M %p') }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Payment Method:</span>
+                    <span>{{ order.payment_method|upper }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Shipping Address:</span>
+                    <span>{{ order.address }}, {{ order.city }} - {{ order.pincode }}</span>
+                </div>
+            </div>
+            
+            <div class="order-items">
+                <h3>Items</h3>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items %}
+                        <tr>
+                            <td>{{ item.product_name }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>${{ item.price }}</td>
+                            <td>${{ item.subtotal }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-right">Subtotal:</td>
+                            <td>₹{{ order.subtotal }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-right">Shipping:</td>
+                            <td>₹{{ order.shipping }}</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="3" class="text-right">Total:</td>
+                            <td>₹{{ order.total }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        
+        <div class="next-steps">
+            <h3>What's Next?</h3>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-icon">
+                        <i class="fa-solid fa-envelope"></i>
+                    </div>
+                    <p>You'll receive an order confirmation email shortly</p>
+                </div>
+                <div class="step">
+                    <div class="step-icon">
+                        <i class="fa-solid fa-truck"></i>
+                    </div>
+                    <p>We'll notify you when your order ships</p>
+                </div>
+                <div class="step">
+                    <div class="step-icon">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <p>Rate your purchase after delivery</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="{{ url_for('home') }}" class="continue-shopping">
+                <i class="fa-solid fa-arrow-left"></i> Continue Shopping
+            </a>
+            <a href="{{ url_for('my_orders') }}" class="view-orders">
+                View My Orders <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.order-confirmed-page {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+.confirmation-box {
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    text-align: center;
+}
+
+.success-animation {
+    font-size: 80px;
+    color: #28a745;
+    margin-bottom: 20px;
+    animation: scaleIn 0.5s;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.confirmation-box h1 {
+    font-size: 32px;
+    color: #212121;
+    margin-bottom: 10px;
+}
+
+.order-number {
+    font-size: 20px;
+    color: #2874f0;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.thank-you {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.order-details {
+    text-align: left;
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 1px solid #eee;
+}
+
+.order-details h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.order-summary {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.order-items {
+    margin-bottom: 30px;
+}
+
+.order-items h3 {
+    margin-bottom: 15px;
+}
+
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.items-table th {
+    background: #f5f5f5;
+    padding: 10px;
+    text-align: left;
+}
+
+.items-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.items-table tfoot td {
+    padding: 10px;
+    font-weight: 500;
+}
+
+.items-table .total-row {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2874f0;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.next-steps {
+    margin: 40px 0;
+    text-align: left;
+}
+
+.next-steps h3 {
+    margin-bottom: 20px;
+}
+
+.steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.step {
+    text-align: center;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.step-icon {
+    font-size: 30px;
+    color: #2874f0;
+    margin-bottom: 10px;
+}
+
+.step p {
+    font-size: 14px;
+    color: #666;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.continue-shopping,
+.view-orders {
+    padding: 12px 30px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.continue-shopping {
+    background: #f0f0f0;
+    color: #212121;
+}
+
+.view-orders {
+    background: #2874f0;
+    color: white;
+}
+
+.continue-shopping:hover {
+    background: #e0e0e0;
+}
+
+.view-orders:hover {
+    background: #1b5fc9;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .confirmation-box {
+        padding: 20px;
+    }
+    
+    .steps-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .items-table {
+        font-size: 14px;
+    }
+}
+</style>
+{% endblock %}
