@@ -1434,5 +1434,22 @@ with app.app_context():
 
     
 
+# ✅ CORRECT - ONLY ONE database initialization at the bottom
 if __name__ == '__main__':
+    with app.app_context():
+        # Create tables if they don't exist (doesn't delete existing data)
+        db.create_all()
+        
+        # Only add sample products if NO products exist
+        if Product.query.count() == 0:
+            create_sample_products()
+            print("✅ Sample products created!")
+        else:
+            print(f"📊 Database already has {Product.query.count()} products")
+        
+        # Debug stats - shows your actual data
+        print(f"👥 Users in database: {User.query.count()}")
+        print(f"📦 Orders in database: {Order.query.count()}")
+    
+    # Start the app
     app.run(debug=True, port=3000)
