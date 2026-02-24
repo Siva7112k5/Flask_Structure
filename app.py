@@ -1,16 +1,27 @@
 from flask import Flask, render_template, redirect, url_for, flash, request, session, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, Product, Order, OrderItem
-from forms import LoginForm, RegisterForm
+from models import db, User, Product, Order, OrderItem, Review, ReviewImage  # Added ReviewImage
+from forms import LoginForm, RegisterForm, ReviewForm
 from functools import wraps
 import random
 import string
 from datetime import datetime
+from textblob import TextBlob
+import os  # Make sure this is imported
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///triowise.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# ✅ IMPORTANT: Add upload configuration
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+# Make sure upload directory exists
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'reviews'), exist_ok=True)
 
 db.init_app(app)
 login_manager = LoginManager()
@@ -129,6 +140,8 @@ def product_detail(product_id):
 @app.route('/about')
 def about():
     return render_template('about.html')
+
+
 
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
@@ -423,6 +436,8 @@ def register():
         flash('Registration successful! Please login.', 'success')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
+
+
 
 @app.route('/logout')
 @login_required
@@ -1433,8 +1448,83 @@ with app.app_context():
         print(f"📊 Database already has {Product.query.count()} products")
 
     
+from textblob import TextBlob
 
-# ✅ CORRECT - ONLY ONE database initialization at the bottom
+import os
+from werkzeug.utils import secure_filename
+from utils.upload import save_review_images
+
+@app.route('/product/<int:product_id>/review', methods=['GET', 'POST'])
+@login_required
+def product_review(product_id):
+    product = Product.query.get_or_404(product_id)
+    form = ReviewForm()
+    
+    # Check if user already reviewed this product
+    existing_review = Review.query.filter_by(
+        user_id=current_user.id, 
+        product_id=product_id
+    ).first()
+    
+    if existing_review:
+        flash('You have already reviewed this product!', 'warning')
+        return redirect(url_for('product_detail', product_id=product_id))
+    
+    if form.validate_on_submit():
+        # Analyze sentiment using TextBlob
+        blob = TextBlob(form.comment.data)
+        sentiment_score = blob.sentiment.polarity
+        
+        # Categorize sentiment
+        if sentiment_score > 0.3:
+            sentiment = "Very Positive"
+        elif sentiment_score > 0:
+            sentiment = "Positive"
+        elif sentiment_score > -0.3:
+            sentiment = "Neutral"
+        elif sentiment_score > -0.7:
+            sentiment = "Negative"
+        else:
+            sentiment = "Very Negative"
+        
+        # Create review
+        review = Review(
+            user_id=current_user.id,
+            product_id=product_id,
+            rating=form.rating.data,
+            comment=form.comment.data,
+            sentiment=sentiment,
+            sentiment_score=sentiment_score
+        )
+        
+        db.session.add(review)
+        db.session.flush()  # Get review ID for images
+        
+        # Handle image uploads
+        if form.images.data:
+            # Filter out empty file inputs
+            files = [f for f in form.images.data if f and f.filename]
+            if files:
+                image_paths = save_review_images(files, review.id)
+                for path in image_paths:
+                    review_image = ReviewImage(
+                        review_id=review.id,
+                        image_url=path
+                    )
+                    db.session.add(review_image)
+        
+        # Update product's average rating
+        all_reviews = Review.query.filter_by(product_id=product_id).all()
+        avg_rating = sum(r.rating for r in all_reviews) / len(all_reviews)
+        product.rating = round(avg_rating, 1)
+        product.reviews_count = len(all_reviews)
+        
+        db.session.commit()
+        
+        flash(f'Thank you for your review! Sentiment detected: {sentiment}', 'success')
+        return redirect(url_for('product_detail', product_id=product_id))
+    
+    return render_template('add_review.html', form=form, product=product)
 if __name__ == '__main__':
     with app.app_context():
         # Create tables if they don't exist (doesn't delete existing data)

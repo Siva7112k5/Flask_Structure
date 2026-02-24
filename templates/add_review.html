@@ -1,0 +1,647 @@
+{% extends "base.html" %}
+
+{% block title %}Write a Review - {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="review-page-container">
+    <div class="review-card-modern">
+        <!-- Header with Product Info -->
+        <div class="review-header">
+            <div class="product-mini-info">
+                {% if product.image %}
+                <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" class="product-thumb">
+                {% endif %}
+                <div>
+                    <h1>Write a Review</h1>
+                    <h2 class="product-name">{{ product.name }}</h2>
+                </div>
+            </div>
+            <a href="{{ url_for('product_detail', product_id=product.id) }}" class="close-btn">
+                <i class="fa-solid fa-xmark"></i>
+            </a>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="review-form">
+            {{ form.hidden_tag() }}
+            
+            <!-- Rating Section -->
+            <div class="rating-section-modern">
+                <label class="section-label">
+                    <i class="fa-regular fa-star"></i>
+                    Your Rating
+                </label>
+                <div class="star-rating-container">
+                    <div class="star-rating-wrapper">
+                        {% for subfield in form.rating %}
+                        <div class="rating-option-card">
+                            {{ subfield(class="star-radio", id="rating-" + subfield.data) }}
+                            <label for="rating-{{ subfield.data }}" class="star-label">
+                                <span class="star-display">
+                                    {% for i in range(5) %}
+                                        {% if i < subfield.data|int %}
+                                            ★
+                                        {% else %}
+                                            ☆
+                                        {% endif %}
+                                    {% endfor %}
+                                </span>
+                                <span class="rating-text">
+                                    {% if subfield.data == '5' %}Excellent{% endif %}
+                                    {% if subfield.data == '4' %}Good{% endif %}
+                                    {% if subfield.data == '3' %}Average{% endif %}
+                                    {% if subfield.data == '2' %}Poor{% endif %}
+                                    {% if subfield.data == '1' %}Terrible{% endif %}
+                                </span>
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if form.rating.errors %}
+                    <span class="error-message">{{ form.rating.errors[0] }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Review Comment Section -->
+            <div class="comment-section-modern">
+                <label class="section-label">
+                    <i class="fa-regular fa-pen-to-square"></i>
+                    Your Review
+                </label>
+                <div class="comment-input-wrapper">
+                    {{ form.comment(class="review-textarea", placeholder="Share your experience with this product...", rows="5") }}
+                    <div class="char-counter">
+                        <span id="charCount">0</span>/500
+                    </div>
+                </div>
+                {% if form.comment.errors %}
+                    <span class="error-message">{{ form.comment.errors[0] }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Image Upload Section -->
+            <div class="image-upload-section">
+                <label class="section-label">
+                    <i class="fa-regular fa-image"></i>
+                    Add Photos (Optional)
+                </label>
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" name="images" id="imageInput" multiple accept="image/*" style="display: none;">
+                    <div class="upload-placeholder" onclick="document.getElementById('imageInput').click()">
+                        <i class="fa-regular fa-cloud-upload"></i>
+                        <p>Click to upload or drag and drop</p>
+                        <span>PNG, JPG, GIF up to 5MB each</span>
+                    </div>
+                    <div class="image-preview-container" id="imagePreviewContainer"></div>
+                </div>
+                {% if form.images.errors %}
+                    <span class="error-message">{{ form.images.errors[0] }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions-modern">
+                <button type="submit" class="btn-submit-review">
+                    <i class="fa-regular fa-paper-plane"></i>
+                    Submit Review
+                </button>
+                <a href="{{ url_for('product_detail', product_id=product.id) }}" class="btn-cancel-review">
+                    <i class="fa-regular fa-circle-xmark"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Character counter
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.getElementById('{{ form.comment.id }}');
+    const charCount = document.getElementById('charCount');
+    
+    if (textarea && charCount) {
+        textarea.addEventListener('input', function() {
+            charCount.textContent = this.value.length;
+            
+            // Change color when approaching limit
+            if (this.value.length > 450) {
+                charCount.style.color = '#ff9800';
+            } else if (this.value.length > 480) {
+                charCount.style.color = '#f44336';
+            } else {
+                charCount.style.color = '#666';
+            }
+        });
+    }
+
+    // Image upload preview
+    const imageInput = document.getElementById('imageInput');
+    const previewContainer = document.getElementById('imagePreviewContainer');
+
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            previewContainer.innerHTML = '';
+            
+            Array.from(e.target.files).forEach((file, index) => {
+                if (file.size > 5 * 1024 * 1024) {
+                    alert(`File ${file.name} is too large. Maximum size is 5MB.`);
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'preview-item';
+                    previewItem.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview ${index + 1}">
+                        <button type="button" class="remove-image" data-index="${index}">
+                            <i class="fa-regular fa-circle-xmark"></i>
+                        </button>
+                        <div class="file-name">${file.name.substring(0, 15)}${file.name.length > 15 ? '...' : ''}</div>
+                    `;
+                    previewContainer.appendChild(previewItem);
+
+                    // Add remove functionality
+                    previewItem.querySelector('.remove-image').addEventListener('click', function() {
+                        previewItem.remove();
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    }
+});
+</script>
+
+<style>
+/* ========== WRITE REVIEW PAGE - MODERN DESIGN ========== */
+.review-page-container {
+    min-height: 80vh;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 40px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.review-card-modern {
+    max-width: 700px;
+    width: 100%;
+    background: white;
+    border-radius: 30px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    animation: slideUp 0.5s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header Styles */
+.review-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 25px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+}
+
+.product-mini-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.product-thumb {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.review-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.product-name {
+    font-size: 16px;
+    opacity: 0.9;
+    margin: 5px 0 0;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.close-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-decoration: none;
+    font-size: 24px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+/* Form Styles */
+.review-form {
+    padding: 40px;
+}
+
+.section-label {
+    display: block;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-label i {
+    color: #667eea;
+    font-size: 22px;
+}
+
+/* Rating Section */
+.rating-section-modern {
+    margin-bottom: 35px;
+}
+
+.star-rating-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.rating-option-card {
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.rating-option-card:hover {
+    transform: translateX(10px);
+}
+
+.star-radio {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.star-label {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.star-radio:checked + .star-label {
+    background: linear-gradient(135deg, #667eea10, #764ba210);
+    border-color: #667eea;
+    box-shadow: 0 10px 20px -10px rgba(102, 126, 234, 0.3);
+}
+
+.star-display {
+    font-size: 24px;
+    color: #ffc107;
+    letter-spacing: 5px;
+    min-width: 140px;
+}
+
+.rating-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+}
+
+/* Comment Section */
+.comment-section-modern {
+    margin-bottom: 30px;
+}
+
+.comment-input-wrapper {
+    position: relative;
+}
+
+.review-textarea {
+    width: 100%;
+    padding: 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 16px;
+    font-size: 16px;
+    line-height: 1.6;
+    transition: all 0.3s ease;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.review-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 10px 30px -10px rgba(102, 126, 234, 0.2);
+}
+
+.char-counter {
+    position: absolute;
+    bottom: 10px;
+    right: 15px;
+    font-size: 13px;
+    color: #666;
+    background: white;
+    padding: 2px 8px;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Image Upload Section */
+.image-upload-section {
+    margin-bottom: 30px;
+}
+
+.upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    background: #fafafa;
+}
+
+.upload-area:hover {
+    border-color: #667eea;
+    background: #f0f3ff;
+}
+
+.upload-placeholder {
+    text-align: center;
+    cursor: pointer;
+    padding: 20px;
+}
+
+.upload-placeholder i {
+    font-size: 48px;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.upload-placeholder p {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.upload-placeholder span {
+    font-size: 13px;
+    color: #666;
+}
+
+.image-preview-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.preview-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.remove-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.remove-image:hover {
+    background: #dc3545;
+    color: white;
+    transform: scale(1.1);
+}
+
+.file-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-size: 10px;
+    padding: 3px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Action Buttons */
+.form-actions-modern {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn-submit-review {
+    flex: 2;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 16px 30px;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-submit-review::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-submit-review:hover::before {
+    left: 100%;
+}
+
+.btn-submit-review:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 30px -10px rgba(102, 126, 234, 0.5);
+}
+
+.btn-submit-review i {
+    font-size: 20px;
+    transition: transform 0.3s ease;
+}
+
+.btn-submit-review:hover i {
+    transform: translateX(5px) rotate(10deg);
+}
+
+.btn-cancel-review {
+    flex: 1;
+    background: white;
+    color: #666;
+    border: 2px solid #e0e0e0;
+    padding: 16px 20px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-cancel-review:hover {
+    background: #f8f9fa;
+    border-color: #999;
+    color: #333;
+    transform: translateY(-2px);
+}
+
+/* Error Message */
+.error-message {
+    display: block;
+    color: #dc3545;
+    font-size: 14px;
+    margin-top: 8px;
+    padding-left: 15px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .review-card-modern {
+        border-radius: 20px;
+    }
+    
+    .review-form {
+        padding: 25px;
+    }
+    
+    .star-display {
+        font-size: 20px;
+        min-width: 120px;
+    }
+    
+    .form-actions-modern {
+        flex-direction: column;
+    }
+    
+    .product-mini-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .image-preview-container {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .review-header h1 {
+        font-size: 20px;
+    }
+    
+    .star-label {
+        padding: 12px 15px;
+    }
+    
+    .star-display {
+        font-size: 18px;
+        min-width: 100px;
+    }
+    
+    .rating-text {
+        font-size: 14px;
+    }
+}
+
+/* Loading State */
+.btn-submit-review.loading {
+    position: relative;
+    color: transparent;
+}
+
+.btn-submit-review.loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 3px solid white;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}  <!-- ← ONLY ONE endblock at the very end -->

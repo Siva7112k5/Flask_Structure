@@ -26,7 +26,7 @@ class Product(db.Model):
     description = db.Column(db.Text, nullable=False)
     short_description = db.Column(db.String(300))
     price = db.Column(db.Float, nullable=False)
-    compare_price = db.Column(db.Float, nullable=True)  # Original price
+    compare_price = db.Column(db.Float, nullable=True)
     discount = db.Column(db.Integer, default=0)
     image = db.Column(db.String(300))
     category = db.Column(db.String(100), nullable=False)
@@ -52,7 +52,7 @@ class Order(db.Model):
     subtotal = db.Column(db.Float, default=0)
     shipping = db.Column(db.Float, default=0)
     total = db.Column(db.Float, default=0)
-    status = db.Column(db.String(20), default='pending')  # pending, confirmed, shipped, delivered
+    status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     items = db.relationship('OrderItem', backref='order', lazy=True, cascade='all, delete-orphan')
 
@@ -65,3 +65,26 @@ class OrderItem(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     subtotal = db.Column(db.Float, nullable=False)
     product = db.relationship('Product')
+
+class Review(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    comment = db.Column(db.Text, nullable=False)
+    sentiment = db.Column(db.String(20))
+    sentiment_score = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='user_reviews')
+    product = db.relationship('Product', backref='product_reviews')
+    images = db.relationship('ReviewImage', backref='review_images', cascade='all, delete-orphan')
+
+class ReviewImage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    review_id = db.Column(db.Integer, db.ForeignKey('review.id'), nullable=False)
+    image_url = db.Column(db.String(300), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # No relationship needed - it's defined in Review class
