@@ -41,7 +41,24 @@
                 <span class="discount">Save {{ product.discount }}% right now</span>
                 {% endif %}
             </div>
-            
+            <!-- Social Share Buttons -->
+<div class="share-section">
+    <h4>Share this product:</h4>
+    <div class="share-buttons">
+        <button class="share-btn facebook" onclick="shareOnFacebook()">
+            <i class="fa-brands fa-facebook"></i>
+        </button>
+        <button class="share-btn twitter" onclick="shareOnTwitter()">
+            <i class="fa-brands fa-twitter"></i>
+        </button>
+        <button class="share-btn whatsapp" onclick="shareOnWhatsApp()">
+            <i class="fa-brands fa-whatsapp"></i>
+        </button>
+        <button class="share-btn copy-link" onclick="copyLink()">
+            <i class="fa-regular fa-link"></i>
+        </button>
+    </div>
+</div>
             <div class="quantity-section">
                 <label>Quantity:</label>
                 <div class="quantity-selector">
@@ -57,7 +74,23 @@
                 </button>
                 <button class="buy-now-btn" onclick="buyNow({{ product.id }})">Buy Now</button>
             </div>
-
+            <!-- Recently Viewed Section -->
+{% if recent_products %}
+<div class="recently-viewed">
+    <h3>Recently Viewed</h3>
+    <div class="recent-grid">
+        {% for recent in recent_products %}
+        <div class="recent-card" onclick="location.href='{{ url_for('product_detail', product_id=recent.id) }}'">
+            <img src="{{ url_for('static', filename=recent.image) }}" alt="{{ recent.name }}">
+            <div class="recent-info">
+                <h4>{{ recent.name[:20] }}{% if recent.name|length > 20 %}...{% endif %}</h4>
+                <span class="recent-price">₹{{ recent.price }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
             <!-- Product Features -->
             <div class="product-features">
                 <div class="feature">
@@ -295,6 +328,25 @@ function buyNow(productId) {
     setTimeout(() => {
         window.location.href = '{{ url_for('cart') }}';
     }, 500);
+}
+</script>
+<script>
+    // Share functions
+function shareOnFacebook() {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${window.location.href}`);
+}
+
+function shareOnTwitter() {
+    window.open(`https://twitter.com/intent/tweet?text=Check out ${document.title}&url=${window.location.href}`);
+}
+
+function shareOnWhatsApp() {
+    window.open(`https://wa.me/?text=${document.title} - ${window.location.href}`);
+}
+
+function copyLink() {
+    navigator.clipboard.writeText(window.location.href);
+    showToast('Link copied to clipboard!');
 }
 </script>
 
@@ -1015,5 +1067,128 @@ function buyNow(productId) {
             font-weight: bold;
             cursor: pointer;
         }
+
+
+/* Recently Viewed */
+.recently-viewed {
+    margin-top: 50px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 16px;
+}
+
+.recently-viewed h3 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recently-viewed h3::before {
+    content: '⌛';
+    font-size: 24px;
+}
+
+.recent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.recent-card {
+    background: white;
+    border-radius: 10px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.recent-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    border-color: #667eea;
+}
+
+.recent-card img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+
+.recent-info h4 {
+    font-size: 13px;
+    color: #333;
+    margin-bottom: 5px;
+    line-height: 1.4;
+}
+
+.recent-price {
+    font-size: 14px;
+    font-weight: 700;
+    color: #667eea;
+}    
+
+/* Share Buttons */
+.share-section {
+    margin: 30px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.share-section h4 {
+    font-size: 16px;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.share-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.share-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+}
+
+.share-btn.facebook {
+    background: #1877f2;
+}
+
+.share-btn.twitter {
+    background: #1da1f2;
+}
+
+.share-btn.whatsapp {
+    background: #25d366;
+}
+
+.share-btn.copy-link {
+    background: #667eea;
+}
+
+.share-btn:hover {
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
 </style>
 {% endblock %}

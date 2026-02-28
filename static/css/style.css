@@ -262,6 +262,30 @@ nav .nav-links a:hover {
     border-radius: 50%;
 }
 
+.wishlist-icon {
+    position: relative;
+    color: #333;
+    font-size: 20px;
+    margin-right: 15px;
+    text-decoration: none;
+}
+
+.wishlist-count-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ff4d4d;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .login-btn {
         background: linear-gradient(135deg, rgb(102, 126, 234), rgb(118, 75, 162));
     color: white;
@@ -3943,4 +3967,595 @@ body.user-logged-in .login-popup-overlay {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Quick View Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background: white;
+    margin: 5% auto;
+    padding: 30px;
+    width: 90%;
+    max-width: 900px;
+    border-radius: 20px;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.4s ease;
+    position: relative;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.modal-header h2 {
+    font-size: 24px;
+    color: #333;
+    margin: 0;
+}
+
+.close-modal {
+    font-size: 30px;
+    font-weight: bold;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.close-modal:hover {
+    color: #667eea;
+    background: #f0f0f0;
+}
+
+/* Quick View Grid */
+.quick-view-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.quick-view-grid img {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.quick-view-details h3 {
+    font-size: 28px;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.quick-view-rating {
+    margin-bottom: 15px;
+}
+
+.quick-view-rating .stars {
+    color: #ffc107;
+    font-size: 18px;
+}
+
+.quick-view-price {
+    margin: 20px 0;
+    padding: 20px 0;
+    border-top: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.quick-view-price .current {
+    font-size: 32px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.quick-view-price .original {
+    font-size: 20px;
+    color: #999;
+    text-decoration: line-through;
+    margin-left: 15px;
+}
+
+.quick-view-description {
+    color: #666;
+    line-height: 1.8;
+    margin-bottom: 25px;
+}
+
+.quick-view-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.quick-view-actions button {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.quick-view-actions .add-to-cart {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.quick-view-actions .view-details {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.quick-view-actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: 50px;
+    font-size: 24px;
+    color: #667eea;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== PROFESSIONAL QUICK VIEW BUTTON ========== */
+
+/* Make sure product card has proper positioning */
+.product-card {
+    position: relative;
+    overflow: hidden;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+/* Quick View Button - Clean Professional Style */
+.quick-view-btn {
+    position: absolute;
+    bottom: -50px;  /* Start hidden below the card */
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2d2d2d;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #eaeaea;
+    white-space: nowrap;
+}
+
+/* Button Icon */
+.quick-view-btn i {
+    font-size: 14px;
+    color: #667eea;
+    transition: all 0.3s ease;
+}
+
+/* Show button on card hover */
+.product-card:hover .quick-view-btn {
+    bottom: 10px;  /* Slides up from bottom */
+    box-shadow: 0 12px 25px rgba(102, 126, 234, 0.25);
+}
+
+/* Button hover effect */
+.quick-view-btn:hover {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 15px 30px rgba(102, 126, 234, 0.35);
+    border-color: transparent;
+}
+
+.quick-view-btn:hover i {
+    color: white;
+    transform: rotate(360deg);
+}
+
+/* Style 2 - Minimal (No gradient, just clean) */
+.quick-view-btn.minimal {
+    background: white;
+    color: #333;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.quick-view-btn.minimal:hover {
+    background: #f8f9fa;
+    color: #667eea;
+    border-color: #667eea;
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+}
+
+.quick-view-btn.minimal:hover i {
+    color: #667eea;
+    transform: rotate(360deg);
+}
+
+/* Style 3 - Solid (For colorful cards) */
+.quick-view-btn.solid {
+    background: linear-gradient(135deg, rgb(102, 126, 234), rgb(118, 75, 162));
+    color: white;
+    border: none;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.quick-view-btn.solid i {
+    color: #e1dbe0;
+}
+
+.quick-view-btn.solid:hover {
+    background: linear-gradient(135deg,  rgb(75, 131, 162)), rgb(29, 60, 196);
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Style 4 - Outline (Transparent) */
+.quick-view-btn.outline {
+    background: transparent;
+    backdrop-filter: blur(5px);
+    color: white;
+    border: 2px solid white;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.quick-view-btn.outline i {
+    color: white;
+}
+
+.quick-view-btn.outline:hover {
+    background: white;
+    color: #2d2d2d;
+    border-color: white;
+}
+
+.quick-view-btn.outline:hover i {
+    color: #667eea;
+}
+
+/* Style 5 - Glass (For modern designs) */
+.quick-view-btn.glass {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.quick-view-btn.glass i {
+    color: white;
+}
+
+.quick-view-btn.glass:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* For mobile - always show button */
+@media (max-width: 768px) {
+    .quick-view-btn {
+        bottom: 15px;
+        opacity: 1;
+        padding: 8px 20px;
+        font-size: 13px;
+    }
+    
+    .product-card .quick-view-btn {
+        bottom: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .quick-view-btn {
+        bottom: 10px;
+        padding: 6px 15px;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+    
+    .quick-view-btn i {
+        font-size: 12px;
+    }
+}
+
+/* Quick View Modal Styles (keep your existing modal styles) */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: white;
+    margin: 5% auto;
+    padding: 30px;
+    width: 90%;
+    max-width: 900px;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    animation: modalSlideUp 0.3s ease;
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Quick View Grid */
+.quick-view-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+@media (max-width: 768px) {
+    .quick-view-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Product Image Zoom */
+.product-image-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    cursor: zoom-in;
+}
+
+.product-image-container img {
+    width: 100%;
+    transition: transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+
+.product-image-container:hover img {
+    transform: scale(1.8);
+}
+
+/* Optional: Lens effect */
+.product-image-container::after {
+    content: '🔍';
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    background: rgba(255,255,255,0.9);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.product-image-container:hover::after {
+    opacity: 1;
+}
+
+/* Wishlist Button */
+.wishlist-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    color: #ff4d4d;
+}
+
+.wishlist-btn i {
+    font-size: 18px;
+    transition: all 0.3s ease;
+}
+
+.wishlist-btn.active {
+    background: #ff4d4d;
+    color: white;
+}
+
+.wishlist-btn.active i {
+    color: white;
+}
+
+.wishlist-btn:hover {
+    transform: scale(1.1);
+    background: #ff4d4d;
+    color: white;
+    box-shadow: 0 6px 15px rgba(255, 77, 77, 0.3);
+}
+
+.wishlist-btn:hover i {
+    color: white;
+}
+
+/* Pulse animation for wishlist */
+@keyframes heartBeat {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.wishlist-btn:active i {
+    animation: heartBeat 0.3s ease;
+}
+
+/* Wishlist Page */
+.wishlist-page {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.wishlist-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.wishlist-header h1 {
+    font-size: 32px;
+    color: #333;
+}
+
+.wishlist-header h1 i {
+    color: #ff4d4d;
+    margin-right: 10px;
+}
+
+.wishlist-count {
+    background: #f0f0f0;
+    padding: 8px 20px;
+    border-radius: 30px;
+    color: #666;
+}
+
+.empty-wishlist {
+    text-align: center;
+    padding: 80px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.empty-wishlist i {
+    font-size: 80px;
+    color: #ccc;
+    margin-bottom: 20px;
+}
+
+.empty-wishlist h2 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.empty-wishlist p {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.shop-now-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 12px 30px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.shop-now-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.loading-spinner i {
+    font-size: 40px;
+    color: #667eea;
+    margin-bottom: 15px;
+}
+
+.loading-spinner p {
+    color: #666;
+    font-size: 16px;
+}
+
+.error-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    background: #f8d7da;
+    color: #721c24;
+    border-radius: 8px;
 }

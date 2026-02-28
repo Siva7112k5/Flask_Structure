@@ -112,6 +112,27 @@
                         <span class="discount-badge">{{ product.discount }}% OFF</span>
                         {% endif %}
                     </div>
+<!-- Default Style (White with gradient hover) -->
+<button class="quick-view-btn" onclick="quickView({{ product.id }}, event)">
+    <i class="fa-regular fa-eye"></i> Quick View
+</button>
+
+<!-- Minimal Style -->
+<button class="quick-view-btn minimal" onclick="quickView({{ product.id }}, event)">
+    <i class="fa-regular fa-eye"></i> Quick View
+</button>
+
+<!-- Solid Dark Style -->
+<button class="quick-view-btn solid" onclick="quickView({{ product.id }}, event)">
+    <i class="fa-regular fa-eye"></i> Quick View
+</button>
+
+<!-- Inside product-card div, before or after quick view button -->
+<button class="wishlist-btn {% if product.id in user_wishlist_ids %}active{% endif %}" 
+        onclick="toggleWishlist({{ product.id }}, event)"
+        data-product-id="{{ product.id }}">
+    <i class="fa-{% if product.id in user_wishlist_ids %}solid{% else %}regular{% endif %} fa-heart"></i>
+</button>
                     <div class="product-info">
                         <h3>{{ product.name }}</h3>
                         <div class="rating">
@@ -259,6 +280,163 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.clear-filters').addEventListener('click', function() {
         window.location.href = '/products';
     });
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let activeFilters = {
+        categories: [],
+        min_price: null,
+        max_price: null,
+        brands: [],
+        min_rating: null,
+        sort_by: 'newest'
+    };
+    
+    // Category filters
+    document.querySelectorAll('input[name="category"]').forEach(cb => {
+        cb.addEventListener('change', function() {
+            updateCategoryFilters();
+            applyFilters();
+        });
+    });
+    
+    // Brand filters
+    document.querySelectorAll('input[name="brand"]').forEach(cb => {
+        cb.addEventListener('change', function() {
+            updateBrandFilters();
+            applyFilters();
+        });
+    });
+    
+    // Rating filters
+    document.querySelectorAll('input[name="rating"]').forEach(cb => {
+        cb.addEventListener('change', function() {
+            if (this.checked) {
+                activeFilters.min_rating = parseInt(this.value);
+            } else {
+                activeFilters.min_rating = null;
+            }
+            applyFilters();
+        });
+    });
+    
+    // Price filter
+    document.querySelector('.apply-price').addEventListener('click', function() {
+        const minPrice = document.getElementById('min-price').value;
+        const maxPrice = document.getElementById('max-price').value;
+        
+        activeFilters.min_price = minPrice ? parseFloat(minPrice) : null;
+        activeFilters.max_price = maxPrice ? parseFloat(maxPrice) : null;
+        
+        applyFilters();
+    });
+    
+    // Sort filter
+    document.getElementById('sort-select').addEventListener('change', function() {
+        activeFilters.sort_by = this.value;
+        applyFilters();
+    });
+    
+    // Clear all filters
+    document.querySelector('.clear-filters').addEventListener('click', function() {
+        // Reset checkboxes
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+        });
+        
+        // Reset price inputs
+        document.getElementById('min-price').value = '';
+        document.getElementById('max-price').value = '';
+        
+        // Reset sort
+        document.getElementById('sort-select').value = 'newest';
+        
+        // Reset active filters
+        activeFilters = {
+            categories: [],
+            min_price: null,
+            max_price: null,
+            brands: [],
+            min_rating: null,
+            sort_by: 'newest'
+        };
+        
+        applyFilters();
+    });
+    
+    function updateCategoryFilters() {
+        activeFilters.categories = Array.from(
+            document.querySelectorAll('input[name="category"]:checked')
+        ).map(cb => cb.value);
+    }
+    
+    function updateBrandFilters() {
+        activeFilters.brands = Array.from(
+            document.querySelectorAll('input[name="brand"]:checked')
+        ).map(cb => cb.value);
+    }
+    
+    function applyFilters() {
+        // Show loading
+        document.getElementById('product-grid').innerHTML = `
+            <div class="loading-spinner">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <p>Loading products...</p>
+            </div>
+        `;
+        
+        fetch('/api/filter-products', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(activeFilters)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('product-grid').innerHTML = data.html;
+                document.querySelector('.product-count').textContent = 
+                    `(${data.count} items)`;
+                
+                // Update URL with filters (optional)
+                updateURL();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('product-grid').innerHTML = `
+                <div class="error-message">
+                    <p>Failed to load products. Please try again.</p>
+                </div>
+            `;
+        });
+    }
+    
+    function updateURL() {
+        const params = new URLSearchParams();
+        
+        if (activeFilters.categories.length) {
+            params.set('category', activeFilters.categories[0]);
+        }
+        if (activeFilters.min_price) {
+            params.set('min_price', activeFilters.min_price);
+        }
+        if (activeFilters.max_price) {
+            params.set('max_price', activeFilters.max_price);
+        }
+        if (activeFilters.brands.length) {
+            params.set('brand', activeFilters.brands[0]);
+        }
+        if (activeFilters.min_rating) {
+            params.set('min_rating', activeFilters.min_rating);
+        }
+        params.set('sort', activeFilters.sort_by);
+        
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState({}, '', newUrl);
+    }
 });
 </script>
 <script>

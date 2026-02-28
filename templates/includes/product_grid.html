@@ -1,0 +1,39 @@
+{% for product in products %}
+<div class="product-card" data-id="{{ product.id }}">
+    <div class="product-image">
+        <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
+        {% if product.discount > 0 %}
+        <span class="discount-badge">{{ product.discount }}% OFF</span>
+        {% endif %}
+        
+        <!-- Wishlist button -->
+        <button class="wishlist-btn {% if product.id in user_wishlist_ids %}active{% endif %}" 
+                onclick="toggleWishlist({{ product.id }}, event)"
+                data-product-id="{{ product.id }}">
+            <i class="fa-{% if product.id in user_wishlist_ids %}solid{% else %}regular{% endif %} fa-heart"></i>
+        </button>
+        
+        <!-- Quick view button -->
+        <button class="quick-view-btn" onclick="quickView({{ product.id }}, event)">
+            <i class="fa-regular fa-eye"></i> Quick View
+        </button>
+    </div>
+    <div class="product-info" onclick="location.href='{{ url_for('product_detail', product_id=product.id) }}'">
+        <h3>{{ product.name }}</h3>
+        <div class="rating">
+            <span class="stars">
+                {% for i in range(5) %}
+                    {% if i < product.rating|int %}★{% else %}☆{% endif %}
+                {% endfor %}
+            </span>
+            <span class="rating-count">({{ product.reviews_count }})</span>
+        </div>
+        <div class="price">
+            <span class="current">₹{{ product.price }}</span>
+            {% if product.compare_price and product.compare_price > product.price %}
+            <span class="original">₹{{ product.compare_price }}</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}

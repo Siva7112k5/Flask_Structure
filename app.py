@@ -8,6 +8,7 @@ import string
 from datetime import datetime
 from flask import render_template
 from textblob import TextBlob
+from models import Wishlist  # Or wherever your models are stored
 import os  # Make sure this is imported
 
 app = Flask(__name__)
@@ -135,8 +136,97 @@ def all_products():
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
-    related_products = Product.query.filter_by(category=product.category).filter(Product.id != product_id).limit(4).all()
-    return render_template('product_detail.html', product=product, related_products=related_products)
+    related_products = Product.query.filter_by(category=product.category)\
+                                   .filter(Product.id != product_id)\
+                                   .limit(4).all()
+    
+    # Track recently viewed
+    recent = session.get('recently_viewed', [])
+    
+    # Remove if already exists
+    if product_id in recent:
+        recent.remove(product_id)
+    
+    # Add to beginning
+    recent.insert(0, product_id)
+    
+    # Keep only last 6
+    recent = recent[:6]
+    session['recently_viewed'] = recent
+    
+    # Get recent products
+    recent_products = []
+    if recent:
+        recent_products = Product.query.filter(Product.id.in_(recent)).all()
+        # Sort by the order in session
+        recent_products.sort(key=lambda x: recent.index(x.id))
+    
+    return render_template('product_detail.html', 
+                         product=product, 
+                         related_products=related_products,
+                         recent_products=recent_products)
+
+@app.route('/api/wishlist/add/<int:product_id>', methods=['POST'])
+@login_required
+def add_to_wishlist(product_id):
+    try:
+        # Check if already in wishlist
+        existing = Wishlist.query.filter_by(
+            user_id=current_user.id,
+            product_id=product_id
+        ).first()
+        
+        if existing:
+            return jsonify({
+                'success': False,
+                'message': 'Product already in wishlist'
+            })
+        
+        wishlist_item = Wishlist(
+            user_id=current_user.id,
+            product_id=product_id
+        )
+        db.session.add(wishlist_item)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Added to wishlist',
+            'wishlist_count': Wishlist.query.filter_by(user_id=current_user.id).count()
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/wishlist/remove/<int:product_id>', methods=['POST'])
+@login_required
+def remove_from_wishlist(product_id):
+    try:
+        wishlist_item = Wishlist.query.filter_by(
+            user_id=current_user.id,
+            product_id=product_id
+        ).first_or_404()
+        
+        db.session.delete(wishlist_item)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Removed from wishlist',
+            'wishlist_count': Wishlist.query.filter_by(user_id=current_user.id).count()
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/wishlist')
+@login_required
+def wishlist():
+    wishlist_items = Wishlist.query.filter_by(user_id=current_user.id)\
+                                  .order_by(Wishlist.created_at.desc()).all()
+    products = [item.product for item in wishlist_items]
+    
+    return render_template('wishlist.html', products=products)
 
 @app.route('/about')
 def about():
@@ -475,6 +565,19 @@ def admin_dashboard():
     products = Product.query.all()
     return render_template('admin/dashboard.html', orders=orders, users=users, products=products)
 
+@app.route('/api/product/<int:product_id>')
+def api_product_detail(product_id):
+    product = Product.query.get_or_404(product_id)
+    return jsonify({
+        'id': product.id,
+        'name': product.name,
+        'price': product.price,
+        'image': url_for('static', filename=product.image),
+        'description': product.short_description,
+        'rating': product.rating,
+        'reviews': product.reviews_count
+    })    
+
 @app.route('/admin/update-order/<int:order_id>', methods=['POST'])
 @login_required
 @admin_required
@@ -675,6 +778,49 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('home'))
 
+@app.route('/api/filter-products', methods=['POST'])
+def filter_products_api():
+    data = request.get_json()
+    
+    query = Product.query
+    
+    # Apply filters
+    if data.get('categories'):
+        query = query.filter(Product.category.in_(data['categories']))
+    
+    if data.get('min_price'):
+        query = query.filter(Product.price >= float(data['min_price']))
+    
+    if data.get('max_price'):
+        query = query.filter(Product.price <= float(data['max_price']))
+    
+    if data.get('brands'):
+        query = query.filter(Product.brand.in_(data['brands']))
+    
+    if data.get('min_rating'):
+        query = query.filter(Product.rating >= float(data['min_rating']))
+    
+    # Sorting
+    sort_by = data.get('sort_by', 'newest')
+    if sort_by == 'price_low':
+        query = query.order_by(Product.price.asc())
+    elif sort_by == 'price_high':
+        query = query.order_by(Product.price.desc())
+    elif sort_by == 'rating':
+        query = query.order_by(Product.rating.desc())
+    else:
+        query = query.order_by(Product.created_at.desc())
+    
+    products = query.all()
+    
+    # Render HTML for products
+    html = render_template('includes/product_grid.html', products=products)
+    
+    return jsonify({
+        'success': True,
+        'html': html,
+        'count': len(products)
+    })
 
 @app.route('/debug-products')
 def debug_products():

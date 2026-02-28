@@ -111,3 +111,135 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Quick View Functions
+function quickView(productId, event) {
+    event.stopPropagation(); // Prevent card click
+    
+    const modal = document.getElementById('quickViewModal');
+    const content = document.getElementById('quickViewContent');
+    
+    // Show modal with loading
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    // Fetch product details
+    fetch(`/api/product/${productId}`)
+        .then(response => response.json())
+        .then(product => {
+            content.innerHTML = `
+                <div class="quick-view-grid">
+                    <img src="${product.image}" alt="${product.name}">
+                    <div class="quick-view-details">
+                        <h3>${product.name}</h3>
+                        
+                        <div class="quick-view-rating">
+                            <span class="stars">
+                                ${'★'.repeat(Math.floor(product.rating))}${'☆'.repeat(5 - Math.floor(product.rating))}
+                            </span>
+                            <span>(${product.reviews} reviews)</span>
+                        </div>
+                        
+                        <div class="quick-view-price">
+                            <span class="current">₹${product.price}</span>
+                        </div>
+                        
+                        <p class="quick-view-description">${product.description}</p>
+                        
+                        <div class="quick-view-actions">
+                            <button class="add-to-cart" onclick="addToCart(${product.id}); closeQuickView();">
+                                <i class="fa-solid fa-cart-plus"></i> Add to Cart
+                            </button>
+                            <button class="view-details" onclick="window.location.href='/product/${product.id}'">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            content.innerHTML = '<div class="error">Failed to load product details</div>';
+        });
+}
+
+function closeQuickView() {
+    document.getElementById('quickViewModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal when clicking outside
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('quickViewModal');
+    if (event.target === modal) {
+        closeQuickView();
+    }
+});
+
+// Handle escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeQuickView();
+    }
+});
+
+// Toggle wishlist function
+function toggleWishlist(productId, event) {
+    event.stopPropagation(); // Prevent card click
+    
+    const btn = event.currentTarget;
+    const icon = btn.querySelector('i');
+    
+    // Check if already in wishlist
+    const isActive = btn.classList.contains('active');
+    
+    // Determine endpoint and method
+    const endpoint = isActive ? 
+        `/api/wishlist/remove/${productId}` : 
+        `/api/wishlist/add/${productId}`;
+    
+    // Show loading state
+    btn.style.pointerEvents = 'none';
+    icon.className = 'fa-solid fa-spinner fa-spin';
+    
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Toggle active state
+            btn.classList.toggle('active');
+            
+            // Update icon
+            if (btn.classList.contains('active')) {
+                icon.className = 'fa-solid fa-heart';
+                showToast('Added to wishlist! ❤️');
+            } else {
+                icon.className = 'fa-regular fa-heart';
+                showToast('Removed from wishlist');
+            }
+            
+            // Update wishlist count in navbar (if exists)
+            const wishlistCount = document.querySelector('.wishlist-count-badge');
+            if (wishlistCount) {
+                wishlistCount.textContent = data.wishlist_count;
+            }
+        } else {
+            showToast(data.message || 'Error updating wishlist', 'error');
+            // Revert icon
+            icon.className = isActive ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to update wishlist', 'error');
+        // Revert icon
+        icon.className = isActive ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+    })
+    .finally(() => {
+        btn.style.pointerEvents = 'auto';
+    });
+}

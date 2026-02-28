@@ -50,7 +50,13 @@
 
 <!-- Hidden element to store user authentication status -->
 <span id="user-auth-status" data-authenticated="{% if current_user.is_authenticated %}true{% else %}false{% endif %}" style="display: none;"></span>
-
+<!-- Add near the cart icon -->
+<a href="{{ url_for('wishlist') }}" class="wishlist-icon">
+    <i class="fa-regular fa-heart"></i>
+    {% if current_user.is_authenticated %}
+    <span class="wishlist-count-badge">{{ current_user.wishlist_items|length }}</span>
+    {% endif %}
+</a>
         <div class="nav-actions">
           <div class="cart-btn" onclick="window.location.href='{{ url_for('cart') }}'">
     <div class="cart-icon-wrapper">
@@ -153,7 +159,21 @@
 <!-- Cookie Consent or Popup Trigger (Hidden) -->
 <div id="popupTrigger" data-showpopup="true" style="display: none;"></div>
 
-
+<!-- Quick View Modal -->
+<div id="quickViewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Product Details</h2>
+            <span class="close-modal" onclick="closeQuickView()">&times;</span>
+        </div>
+        <div class="modal-body" id="quickViewContent">
+            <!-- Content will be loaded here -->
+            <div class="loading-spinner">
+                <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+            </div>
+        </div>
+    </div>
+</div>
 
     <footer class="footer">
         <div class="footer-container">

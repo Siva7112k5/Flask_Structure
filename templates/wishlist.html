@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}My Wishlist - Triowise{% endblock %}
+
+{% block content %}
+<div class="wishlist-page">
+    <div class="wishlist-header">
+        <h1>
+            <i class="fa-regular fa-heart"></i> My Wishlist
+        </h1>
+        <span class="wishlist-count">{{ products|length }} items</span>
+    </div>
+
+    {% if products %}
+    <div class="product-grid">
+        {% for product in products %}
+        <div class="product-card" data-id="{{ product.id }}">
+            <div class="product-image">
+                <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
+                {% if product.discount > 0 %}
+                <span class="discount-badge">{{ product.discount }}% OFF</span>
+                {% endif %}
+                
+                <!-- Wishlist button (active) -->
+                <button class="wishlist-btn active" 
+                        onclick="toggleWishlist({{ product.id }}, event)"
+                        data-product-id="{{ product.id }}">
+                    <i class="fa-solid fa-heart"></i>
+                </button>
+                
+                <!-- Quick view button -->
+                <button class="quick-view-btn" onclick="quickView({{ product.id }}, event)">
+                    <i class="fa-regular fa-eye"></i> Quick View
+                </button>
+            </div>
+            <div class="product-info" onclick="location.href='{{ url_for('product_detail', product_id=product.id) }}'">
+                <h3>{{ product.name }}</h3>
+                <div class="rating">
+                    <span class="stars">
+                        {% for i in range(5) %}
+                            {% if i < product.rating|int %}★{% else %}☆{% endif %}
+                        {% endfor %}
+                    </span>
+                    <span class="rating-count">({{ product.reviews_count }})</span>
+                </div>
+                <div class="price">
+                    <span class="current">₹{{ product.price }}</span>
+                    {% if product.compare_price and product.compare_price > product.price %}
+                    <span class="original">₹{{ product.compare_price }}</span>
+                    {% endif %}
+                </div>
+                <button class="add-to-cart-small" onclick="addToCart({{ product.id }}, event)">
+                    <i class="fa-solid fa-cart-plus"></i> Add to Cart
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-wishlist">
+        <i class="fa-regular fa-heart"></i>
+        <h2>Your wishlist is empty</h2>
+        <p>Save your favorite items here and shop them later!</p>
+        <a href="{{ url_for('all_products') }}" class="shop-now-btn">
+            <i class="fa-solid fa-shop"></i> Browse Products
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -52,6 +52,28 @@
                             <span class="discount-badge">{{ product.discount }}% OFF</span>
                             {% endif %}
                         </div>
+
+<!-- Default Style (White with gradient hover) -->
+<button class="quick-view-btn" onclick="quickView({{ product.id }}, event)">
+    <i class="fa-regular fa-eye"></i> Quick View
+</button>
+
+<!-- Minimal Style -->
+<button class="quick-view-btn minimal" onclick="quickView({{ product.id }}, event)">
+    <i class="fa-regular fa-eye"></i> Quick View
+</button>
+
+<!-- Solid Dark Style -->
+<button class="quick-view-btn solid" onclick="quickView({{ product.id }}, event)">
+    <i class="fa-regular fa-eye"></i> Quick View
+</button>
+
+<!-- Inside product-card div, before or after quick view button -->
+<button class="wishlist-btn {% if product.id in user_wishlist_ids %}active{% endif %}" 
+        onclick="toggleWishlist({{ product.id }}, event)"
+        data-product-id="{{ product.id }}">
+    <i class="fa-{% if product.id in user_wishlist_ids %}solid{% else %}regular{% endif %} fa-heart"></i>
+</button>
                         <div class="product-info">
                             <h3>{{ product.name }}</h3>
                             <div class="rating">
