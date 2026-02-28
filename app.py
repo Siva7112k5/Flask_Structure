@@ -327,11 +327,11 @@ def checkout():
             subtotal=subtotal,
             shipping=0,
             total=subtotal,
-            status='confirmed'  # or 'pending' based on payment
+            status='confirmed'
         )
         
         db.session.add(order)
-        db.session.flush()  # Get order ID
+        db.session.flush()
         
         # Add order items
         for item in cart_items:
@@ -347,10 +347,11 @@ def checkout():
         
         db.session.commit()
         
+        # ✅ Send email confirmation (ADD THIS LINE)
+        send_order_confirmation_email(order)
+        
         # Clear cart
         session.pop('cart', None)
-        
-        print(f"✅ Order created: {order.order_number}")  # Debug print
         
         return jsonify({
             'success': True, 
@@ -362,7 +363,31 @@ def checkout():
         db.session.rollback()
         print(f"❌ Checkout error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
-    
+
+  from flask import render_template
+
+def send_order_confirmation_email(order):
+    try:
+        user = User.query.get(order.user_id)
+        
+        msg = Message(
+            subject=f"Order Confirmation - #{order.order_number}",
+            recipients=[user.email]
+        )
+        
+        # Render HTML template
+        msg.html = render_template('emails/order_confirmation.html', order=order)
+        
+        # Plain text fallback
+        msg.body = f"Order #{order.order_number} confirmed. Total: ₹{order.total}"
+        
+        mail.send(msg)
+        print(f"✅ Email sent to {user.email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Email failed: {str(e)}")
+        return False  
 
 @app.route('/order-confirmed/<int:order_id>')
 @login_required
@@ -401,43 +426,259 @@ def update_order_status(order_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# At the top with other imports
+from flask_mail import Mail, Message
+
+# Add to your app configuration (around line 10-15)
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'your-email@gmail.com'  # Your Gmail
+app.config['MAIL_PASSWORD'] = 'your-app-password'      # Gmail App Password
+app.config['MAIL_DEFAULT_SENDER'] = 'your-email@gmail.com'
+
+mail = Mail(app)
+
+
+def send_order_confirmation_email(order):
+    """Send order confirmation email to customer"""
+    try:
+        # Get user email
+        user = User.query.get(order.user_id)
+        recipient = user.email
+        
+        # Create email content
+        subject = f"Order Confirmation - #{order.order_number}"
+        
+        # Build email body
+        body = f"""
+        Dear {order.customer_name},
+        
+        Thank you for your order! Your order has been confirmed.
+        
+        Order Details:
+        Order Number: {order.order_number}
+        Order Date: {order.created_at.strftime('%d %B %Y, %I:%M %p')}
+        Payment Method: {order.payment_method.upper()}
+        
+        Items Ordered:
+        """
+        
+        for item in order.items:
+            body += f"\n- {item.product_name} x{item.quantity} = ₹{item.subtotal}"
+        
+        body += f"""
+        
+        Subtotal: ₹{order.subtotal}
+        Shipping: ₹{order.shipping}
+        Total: ₹{order.total}
+        
+        Shipping Address:
+        {order.address}
+        {order.city} - {order.pincode}
+        
+        You can track your order at: {url_for('my_orders', _external=True)}
+        
+        Thank you for shopping with Triowise!
+        
+        Best regards,
+        Triowise Team
+        """
+        
+        # Create and send message
+        msg = Message(subject, recipients=[recipient])
+        msg.body = body
+        
+        # Optional: Add HTML version
+        msg.html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 30px; text-align: center; color: white;">
+                <h1>Order Confirmed!</h1>
+                <p>Order #{order.order_number}</p>
+            </div>
+            
+            <div style="padding: 30px;">
+                <p>Dear <strong>{order.customer_name}</strong>,</p>
+                <p>Thank you for your order! Your order has been confirmed and is being processed.</p>
+                
+                <h3 style="color: #333;">Order Summary</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 10px; text-align: left;">Product</th>
+                        <th style="padding: 10px; text-align: center;">Qty</th>
+                        <th style="padding: 10px; text-align: right;">Price</th>
+                    </tr>
+                    {% for item in order.items %}
+                    <tr>
+                        <td style="padding: 10px;">{{ item.product_name }}</td>
+                        <td style="padding: 10px; text-align: center;">{{ item.quantity }}</td>
+                        <td style="padding: 10px; text-align: right;">₹{{ item.subtotal }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                
+                <div style="margin-top: 20px; text-align: right;">
+                    <p><strong>Subtotal:</strong> ₹{{ order.subtotal }}</p>
+                    <p><strong>Shipping:</strong> ₹{{ order.shipping }}</p>
+                    <p style="font-size: 18px;"><strong>Total:</strong> ₹{{ order.total }}</p>
+                </div>
+                
+                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <h4>Shipping Address</h4>
+                    <p>{{ order.address }}, {{ order.city }} - {{ order.pincode }}</p>
+                </div>
+                
+                <div style="margin-top: 30px; text-align: center;">
+                    <a href="{{ url_for('my_orders', _external=True) }}" 
+                       style="background: #667eea; color: white; padding: 12px 30px; 
+                              text-decoration: none; border-radius: 5px; display: inline-block;">
+                        View My Orders
+                    </a>
+                </div>
+                
+                <p style="margin-top: 30px; color: #666; font-size: 14px;">
+                    Thank you for shopping with Triowise!<br>
+                    <small>If you have any questions, contact us at support@triowise.com</small>
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        mail.send(msg)
+        print(f"✅ Email sent to {recipient}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Email failed: {str(e)}")
+        return False
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
+    
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user and user.check_password(form.password.data):
-            login_user(user)
+            # ✅ Now 'remember' exists in the form
+            login_user(user, remember=form.remember.data)
             flash('Login successful!', 'success')
-            return redirect(url_for('home'))
+            
+            # Check if it's an AJAX request from popup
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': True, 'redirect': url_for('home')})
+            
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('home'))
         else:
             flash('Invalid email or password.', 'danger')
+    
     return render_template('login.html', form=form)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
+    
     form = RegisterForm()
     if form.validate_on_submit():
         if User.query.filter_by(email=form.email.data).first():
             flash('Email already registered.', 'danger')
             return render_template('register.html', form=form)
+        
         user = User(
             name=form.name.data,
             email=form.email.data,
-            role=form.role.data
+            role=form.role.data  # ✅ This will now work
         )
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
         flash('Registration successful! Please login.', 'success')
         return redirect(url_for('login'))
+    
     return render_template('register.html', form=form)
 
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    email = request.form.get('email')
+    password = request.form.get('password')
+    remember = True if request.form.get('remember') else False
+    
+    user = User.query.filter_by(email=email).first()
+    
+    if user and user.check_password(password):
+        login_user(user, remember=remember)
+        return jsonify({
+            'success': True,
+            'message': 'Login successful!',
+            'redirect': url_for('home')
+        })
+    else:
+        return jsonify({
+            'success': False,
+            'error': 'Invalid email or password.'
+        })
 
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    name = request.form.get('name')
+    email = request.form.get('email')
+    password = request.form.get('password')
+    confirm_password = request.form.get('confirm_password')
+    role = request.form.get('role', 'user')
+    
+    # Validation
+    if not all([name, email, password, confirm_password]):
+        return jsonify({'success': False, 'error': 'All fields are required.'})
+    
+    if password != confirm_password:
+        return jsonify({'success': False, 'error': 'Passwords do not match.'})
+    
+    if len(password) < 6:
+        return jsonify({'success': False, 'error': 'Password must be at least 6 characters.'})
+    
+    # Check if user exists
+    if User.query.filter_by(email=email).first():
+        return jsonify({'success': False, 'error': 'Email already registered.'})
+    
+    # Create user
+    user = User(
+        name=name,
+        email=email,
+        role=role
+    )
+    user.set_password(password)
+    
+    db.session.add(user)
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'message': 'Registration successful! You can now login.',
+        'email': email
+    })
+
+
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.query.filter_by(email=email).first()
+        
+        if user:
+            # Here you would send an email with reset link
+            flash('Password reset instructions sent to your email!', 'success')
+        else:
+            flash('Email not found!', 'danger')
+        
+        return redirect(url_for('login'))
+    
+    return render_template('forgot_password.html')
 
 @app.route('/logout')
 @login_required
