@@ -1,5 +1,7 @@
 {% extends "base.html" %}
+
 {% block title %}Search Results - Triowise{% endblock %}
+
 {% block content %}
 <div class="search-results-page">
     <div class="container">
@@ -7,72 +9,167 @@
         <div class="search-header">
             <h1>Search Results</h1>
             {% if query %}
-            <p class="search-query">Showing results for "{{ query }}"</p>
+            <p class="search-query">
+                Showing results for "{{ query }}"
+                {% if search_time %}
+                <small class="search-time">({{ search_time }}ms)</small>
+                {% endif %}
+            </p>
             {% endif %}
         </div>
 
-        {% if products %}
-        <div class="results-info">
-            <p>{{ products|length }} products found</p>
-        </div>
+        {% if not query %}
+            <!-- Popular Searches Section (NEW) -->
+            <div class="popular-searches">
+                <h2>Popular Searches</h2>
+                <div class="popular-tags">
+                    {% for search, count in popular_searches %}
+                    <a href="{{ url_for('search', q=search) }}" class="popular-tag">
+                        {{ search }} <span class="count">({{ count }})</span>
+                    </a>
+                    {% else %}
+                    <p class="no-data">No popular searches yet</p>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <!-- Search Stats (UPDATED) -->
+            <div class="results-info">
+                <p>Found <strong>{{ total_results|default(products|length) }}</strong> products 
+                {% if search_time %}in {{ search_time }}ms{% endif %}</p>
+            </div>
 
-        <!-- Products Grid -->
-        <div class="product-grid">
-            {% for product in products %}
-            <div class="product-card" onclick="location.href='{{ url_for('product_detail', product_id=product.id) }}'">
-                <div class="product-image">
-                    <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
-                    {% if product.discount > 0 %}
-                    <span class="discount-badge">{{ product.discount }}% OFF</span>
+            {% if products %}
+                <!-- Products Grid -->
+                <div class="product-grid">
+                    {% for product in products %}
+                    <div class="product-card" 
+                         onclick="location.href='{{ url_for('product_detail', product_id=product.id) }}'"
+                         data-product-id="{{ product.id }}">
+                        <div class="product-image">
+                            <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
+                            {% if product.discount > 0 %}
+                            <span class="discount-badge">{{ product.discount }}% OFF</span>
+                            {% endif %}
+                        </div>
+                        <div class="product-info">
+                            <h3>{{ product.name }}</h3>
+                            <div class="rating">
+                                <span class="stars">
+                                    {% for i in range(5) %}
+                                        {% if i < product.rating|int %}★{% else %}☆{% endif %}
+                                    {% endfor %}
+                                </span>
+                                <span class="rating-count">({{ product.reviews_count }})</span>
+                            </div>
+                            <div class="price">
+                                <span class="current">₹{{ product.price }}</span>
+                                {% if product.compare_price and product.compare_price > product.price %}
+                                <span class="original">₹{{ product.compare_price }}</span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Best Match Badge (NEW) -->
+                            {% if loop.index <= 3 %}
+                            <div class="match-info">
+                                <span class="match-badge">Best Match</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination (NEW) -->
+                {% if total_pages and total_pages > 1 %}
+                <div class="pagination">
+                    {% if page > 1 %}
+                    <a href="{{ url_for('search', q=query, page=page-1) }}" class="page-link">
+                        <i class="fa-solid fa-chevron-left"></i> Previous
+                    </a>
+                    {% endif %}
+                    
+                    <span class="page-info">Page {{ page }} of {{ total_pages }}</span>
+                    
+                    {% if page < total_pages %}
+                    <a href="{{ url_for('search', q=query, page=page+1) }}" class="page-link">
+                        Next <i class="fa-solid fa-chevron-right"></i>
+                    </a>
                     {% endif %}
                 </div>
-                <div class="product-info">
-                    <h3>{{ product.name }}</h3>
-                    <div class="rating">
-                        <span class="stars">
-                            {% for i in range(5) %}
-                                {% if i < product.rating|int %}★{% else %}☆{% endif %}
-                            {% endfor %}
-                        </span>
-                        <span class="rating-count">({{ product.reviews_count }})</span>
-                    </div>
-                    <div class="price">
-                        <span class="current">₹{{ product.price }}</span>
-                        {% if product.compare_price and product.compare_price > product.price %}
-                        <span class="original">₹{{ product.compare_price }}</span>
-                        {% endif %}
-                    </div>
-                   
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+                {% endif %}
 
-        {% else %}
-        <!-- No Results Found -->
-        <div class="no-results">
-            <div class="no-results-icon">
-                <i class="fa-solid fa-magnifying-glass"></i>
-            </div>
-            <h2>No products found</h2>
-            <p>We couldn't find any products matching "{{ query }}"</p>
-            <div class="suggestions">
-                <h3>Suggestions:</h3>
-                <ul>
-                    <li>Check your spelling</li>
-                    <li>Try more general keywords</li>
-                    <li>Try different keywords</li>
-                    <li>Browse our categories below</li>
-                </ul>
-            </div>
-            <a href="{{ url_for('all_products') }}" class="browse-all-btn">Browse All Products</a>
-        </div>
+                <!-- Related Searches (NEW) -->
+                {% if related_searches %}
+                <div class="related-searches">
+                    <h3>Related Searches</h3>
+                    <div class="related-tags">
+                        {% for related in related_searches %}
+                        <a href="{{ url_for('search', q=related) }}" class="related-tag">
+                            {{ related }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+            {% else %}
+                <!-- No Results Found with Spelling Suggestion (UPDATED) -->
+                <div class="no-results">
+                    <div class="no-results-icon">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <h2>No products found</h2>
+                    <p>We couldn't find any products matching "{{ query }}"</p>
+                    
+                    <!-- Spelling Suggestion (NEW) -->
+                    {% if corrected_query %}
+                    <div class="did-you-mean">
+                        <p>Did you mean: <a href="{{ url_for('search', q=corrected_query) }}">{{ corrected_query }}</a>?</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="suggestions">
+                        <h3>Suggestions:</h3>
+                        <ul>
+                            <li>Check your spelling</li>
+                            <li>Try more general keywords</li>
+                            <li>Try different keywords</li>
+                            <li>Browse our categories below</li>
+                        </ul>
+                    </div>
+                    
+                    <a href="{{ url_for('all_products') }}" class="browse-all-btn">Browse All Products</a>
+                </div>
+            {% endif %}
         {% endif %}
     </div>
 </div>
 
+<!-- Track Clicks Script (NEW) -->
 <script>
-// Single addToCart function - remove the duplicate
+// Track clicks on search results for better recommendations
+document.querySelectorAll('.product-card').forEach(card => {
+    card.addEventListener('click', function(e) {
+        const productId = this.dataset.productId;
+        const query = '{{ query }}';
+        
+        if (query && productId) {
+            fetch('/search/click', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: query,
+                    product_id: parseInt(productId)
+                })
+            }).catch(error => console.error('Error tracking click:', error));
+        }
+    });
+});
+
+// Existing addToCart function
 function addToCart(productId) {
     fetch(`/add-to-cart/${productId}`, {
         method: 'POST',
@@ -84,9 +181,7 @@ function addToCart(productId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Show success message
             showToast('Product added to cart!');
-            // Update cart count in navbar
             document.querySelector('.cart-count').textContent = data.cart_count;
         } else {
             alert('Failed to add product to cart. Please try again.');
@@ -110,7 +205,6 @@ function showToast(message) {
     `;
     document.body.appendChild(toast);
     
-    // Auto remove after 3 seconds
     setTimeout(() => {
         toast.remove();
     }, 3000);
@@ -118,292 +212,436 @@ function showToast(message) {
 </script>
 
 <style>
+/* Your existing styles + new additions below */
+
+/* Popular Searches Section */
+.popular-searches,
+.related-searches {
+    margin: 40px 0;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.popular-searches h2,
+.related-searches h3 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 24px;
+}
+
+.popular-tags,
+.related-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.popular-tag,
+.related-tag {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 30px;
+    color: #333;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.popular-tag:hover,
+.related-tag:hover {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.popular-tag .count {
+    color: #999;
+    font-size: 13px;
+    margin-left: 5px;
+}
+
+.popular-tag:hover .count {
+    color: rgba(255,255,255,0.9);
+}
+
+/* Search Time */
+.search-time {
+    font-size: 14px;
+    color: #999;
+    margin-left: 10px;
+    font-weight: normal;
+}
+
+/* Best Match Badge */
+.match-info {
+    margin-top: 8px;
+}
+
+.match-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Did You Mean */
+.did-you-mean {
+    margin: 25px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    border-radius: 12px;
+    color: #1565c0;
+    font-size: 18px;
+    border-left: 5px solid #2196f3;
+}
+
+.did-you-mean a {
+    color: #0d47a1;
+    font-weight: 700;
+    text-decoration: underline;
+    font-size: 20px;
+    transition: color 0.3s ease;
+}
+
+.did-you-mean a:hover {
+    color: #ff6b6b;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin: 40px 0;
+}
+
+.page-link {
+    padding: 12px 25px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    text-decoration: none;
+    border-radius: 30px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.page-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}
+
+.page-info {
+    color: #666;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 8px 20px;
+    background: #f8f9fa;
+    border-radius: 30px;
+}
+
+/* No Data Message */
+.no-data {
+    color: #999;
+    font-style: italic;
+    padding: 20px;
+    text-align: center;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+/* Responsive additions */
+@media (max-width: 768px) {
+    .popular-searches h2,
+    .related-searches h3 {
+        font-size: 20px;
+    }
+    
+    .popular-tag,
+    .related-tag {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+    
+    .did-you-mean {
+        font-size: 16px;
+        padding: 15px;
+    }
+    
+    .did-you-mean a {
+        font-size: 18px;
+    }
+    
+    .pagination {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .page-link {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pagination {
+        flex-direction: column;
+    }
+    
+    .page-info {
+        order: -1;
+        margin-bottom: 10px;
+    }
+}
+
+/* ========== SEARCH RESULTS HEADER STYLES ========== */
+
 .search-results-page {
     max-width: 1200px;
     margin: 40px auto;
     padding: 0 20px;
 }
 
+/* Main Header Container */
 .search-header {
-    text-align: center;
     margin-bottom: 30px;
+    padding: 20px 0;
+    border-bottom: 2px solid #f0f0f0;
 }
 
+/* Main Title */
 .search-header h1 {
-    font-size: 36px;
-    color: #212121;
+    font-size: 42px;
+    font-weight: 800;
+    color: #1a1a1a;
     margin-bottom: 10px;
-}
-
-.search-query {
-    font-size: 18px;
-    color: #666;
-}
-
-.results-info {
-    margin-bottom: 20px;
-    padding: 10px;
-    background: #f5f5f5;
-    border-radius: 4px;
-    color: #666;
-}
-
-.product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 20px;
-    margin-bottom: 40px;
-}
-
-.product-card {
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-    cursor: pointer;
-    border: 1px solid #e0e0e0;
+    letter-spacing: -1px;
     position: relative;
-}
-
-.product-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-    border-color: #2874f0;
-}
-
-.product-image {
-    position: relative;
-    background: white;
-    padding: 20px;
-    height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.product-image img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
-
-.discount-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: #9c5960;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-    z-index: 1;
-}
-
-.product-info {
-    padding: 15px;
-}
-
-.product-info h3 {
-    font-size: 14px;
-    font-weight: 500;
-    color: #212121;
-    margin-bottom: 8px;
-    line-height: 1.4;
-    height: 40px;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-}
-
-.rating {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.stars {
-    color: #70e52c;
-    font-size: 14px;
-    letter-spacing: 2px;
-}
-
-.rating-count {
-    color: #666;
-    font-size: 12px;
-}
-
-.price {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-}
-
-.current {
-    font-size: 16px;
-    font-weight: 700;
-    color: #212121;
-}
-
-.original {
-    font-size: 13px;
-    color: #666;
-    text-decoration: line-through;
-}
-
-.quick-add {
-    width: 100%;
-    background: #deceb4;
-    color: #212121;
-    border: none;
-    padding: 8px;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 5px;
-    transition: background 0.2s;
-}
-
-.quick-add:hover {
-    background: #e68a00;
-}
-
-.no-results {
-    text-align: center;
-    padding: 60px 20px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.no-results-icon {
-    font-size: 80px;
-    color: #ccc;
-    margin-bottom: 20px;
-}
-
-.no-results h2 {
-    font-size: 28px;
-    color: #212121;
-    margin-bottom: 10px;
-}
-
-.no-results p {
-    font-size: 16px;
-    color: #666;
-    margin-bottom: 30px;
-}
-
-.suggestions {
-    max-width: 400px;
-    margin: 0 auto 30px;
-    text-align: left;
-    padding: 20px;
-    background: #f9f9f9;
-    border-radius: 8px;
-}
-
-.suggestions h3 {
-    font-size: 18px;
-    margin-bottom: 10px;
-    color: #212121;
-}
-
-.suggestions ul {
-    list-style: none;
-    padding: 0;
-}
-
-.suggestions li {
-    padding: 8px 0 8px 20px;
-    position: relative;
-    color: #666;
-}
-
-.suggestions li:before {
-    content: "•";
-    color: #2874f0;
-    font-weight: bold;
-    position: absolute;
-    left: 0;
-}
-
-.browse-all-btn {
     display: inline-block;
-    background: #2874f0;
-    color: white;
-    text-decoration: none;
-    padding: 12px 30px;
-    border-radius: 4px;
-    font-weight: 600;
-    transition: background 0.2s;
 }
 
-.browse-all-btn:hover {
-    background: #1b5fc9;
+/* Gradient underline effect */
+.search-header h1::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 2px;
 }
 
-.toast-notification {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: #28a745;
-    color: white;
-    padding: 15px 20px;
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 1000;
-    animation: slideIn 0.3s;
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-.toast-content {
+/* Search Query Text */
+.search-query {
+    font-size: 20px;
+    color: #4a5568;
+    margin: 15px 0 5px;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 10px;
 }
 
-.toast-content button {
+/* The actual search term */
+.search-query strong,
+.search-query .query-text {
+    color: #667eea;
+    font-weight: 700;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 5px 15px;
+    border-radius: 30px;
+    display: inline-block;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+/* Search Time */
+.search-time {
+    font-size: 14px;
+    color: #718096;
+    background: #f7fafc;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid #e2e8f0;
+}
+
+.search-time::before {
+    content: '⚡';
+    font-size: 14px;
+    color: #fbbf24;
+}
+
+/* Results Info Bar */
+.results-info {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    padding: 15px 25px;
+    border-radius: 50px;
+    margin: 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+}
+
+.results-info p {
+    font-size: 16px;
+    color: #2d3748;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.results-info strong {
+    color: #667eea;
+    font-size: 18px;
+    font-weight: 700;
     background: white;
-    color: #28a745;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 600;
-    margin-left: 10px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.toast-content button:hover {
-    background: #f0f0f0;
+/* Alternative version with more style */
+.search-header-modern {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: linear-gradient(135deg, #f8fafc, #ffffff);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
 }
 
-/* Responsive */
+.search-header-modern h1 {
+    font-size: 48px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 15px;
+}
+
+/* Stats Cards */
+.search-stats {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.stat-card {
+    background: white;
+    padding: 15px 25px;
+    border-radius: 40px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #e2e8f0;
+}
+
+.stat-card i {
+    color: #667eea;
+    font-size: 20px;
+}
+
+.stat-card span {
+    font-size: 16px;
+    color: #2d3748;
+}
+
+.stat-card strong {
+    color: #667eea;
+    font-size: 18px;
+    margin-left: 5px;
+}
+
+/* Breadcrumb navigation */
+.search-breadcrumb {
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: #718096;
+}
+
+.search-breadcrumb a {
+    color: #667eea;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.search-breadcrumb a:hover {
+    color: #764ba2;
+}
+
+.search-breadcrumb i {
+    margin: 0 8px;
+    font-size: 12px;
+    color: #cbd5e0;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
-    .product-grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 15px;
+    .search-header h1 {
+        font-size: 32px;
     }
     
-    .product-image {
-        height: 150px;
+    .search-query {
+        font-size: 18px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .results-info {
+        flex-direction: column;
+        text-align: center;
+        border-radius: 20px;
+        padding: 20px;
+    }
+    
+    .search-header-modern h1 {
+        font-size: 36px;
+    }
+    
+    .stat-card {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-header h1 {
+        font-size: 28px;
+    }
+    
+    .search-time {
+        font-size: 12px;
+    }
+    
+    .results-info p {
+        font-size: 14px;
+    }
+    
+    .results-info strong {
+        font-size: 16px;
     }
 }
 </style>

@@ -1,0 +1,19 @@
+Dear {{ order.customer_name }},
+
+Thank you for your order! Order #{{ order.order_number }} has been confirmed.
+
+Order Details:
+--------------------------------------------------
+{% for item in order.items %}
+{{ item.product_name }} x{{ item.quantity }} = ₹{{ item.subtotal }}
+{% endfor %}
+--------------------------------------------------
+Subtotal: ₹{{ order.subtotal }}
+Shipping: ₹{{ order.shipping }}
+TOTAL: ₹{{ order.total }}
+
+Shipping Address: {{ order.address }}, {{ order.city }} - {{ order.pincode }}
+
+Track your order: {{ url_for('my_orders', _external=True) }}
+
+Thank you for shopping with Triowise!

@@ -6,6 +6,7 @@ from functools import wraps
 import random
 import string
 from datetime import datetime
+from flask import render_template
 from textblob import TextBlob
 import os  # Make sure this is imported
 
@@ -154,27 +155,90 @@ from sqlalchemy import func
 
 from sqlalchemy import func
 
+# At the top of app.py, add these imports
+from utils.smart_search import SmartSearch, SearchHistory
+from functools import lru_cache
+import time
+
+# Initialize search history (can be stored in database later)
+search_history = SearchHistory()
+
 @app.route('/search')
 def search():
-    query_text = request.args.get('q', '').strip()
-    print(f"Search query: '{query_text}'")  # Debug in console
+    """
+    Enhanced smart search route
+    """
+    query = request.args.get('q', '').strip()
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
     
-    if not query_text:
-        return render_template('search_results.html', products=[], query='')
+    start_time = time.time()
     
-    # Try different search approaches
-    # Approach 1: Case-insensitive search
-    search_query = Product.query.filter(
-        Product.name.ilike(f'%{query_text}%') | 
-        Product.description.ilike(f'%{query_text}%') |
-        Product.category.ilike(f'%{query_text}%')
-    ).all()
+    if not query:
+        # Show popular searches if no query
+        popular = search_history.get_popular_searches(10)
+        return render_template('search_results.html', 
+                             products=[],
+                             query='',
+                             popular_searches=popular,
+                             search_time=0)
     
-    print(f"Found {len(search_query)} results")  # Debug
+    # Get all products (you might want to cache this)
+    products = Product.query.all()
     
-    return render_template('search_results.html', 
-                         products=search_query, 
-                         query=query_text)
+    # Create smart search instance
+    smart_search = SmartSearch(products)
+    
+    # Perform smart search
+    results = smart_search.search(query)
+    
+    # Log the search
+    search_history.log_search(query, len(results))
+    
+    # Check if we should suggest spelling correction
+    if len(results) == 0:
+        corrected = smart_search.suggest_corrections(query)
+        if corrected and corrected != query:
+            flash(f'Did you mean: "{corrected}"?', 'info')
+    
+    # Get related searches
+    related = search_history.get_related_searches(query)
+    
+    # Extract just the products from results
+    products_found = [r[0] for r in results]
+    
+    # Calculate search time
+    search_time = round((time.time() - start_time) * 1000, 2)  # in milliseconds
+    
+    # Paginate results
+    total = len(products_found)
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_products = products_found[start:end]
+    
+    return render_template('search_results.html',
+                         products=paginated_products,
+                         query=query,
+                         total_results=total,
+                         page=page,
+                         per_page=per_page,
+                         search_time=search_time,
+                         related_searches=related)
+
+@app.route('/search/click', methods=['POST'])
+def track_search_click():
+    """
+    Track when users click on search results
+    This helps improve search relevance over time
+    """
+    data = request.get_json()
+    query = data.get('query')
+    product_id = data.get('product_id')
+    
+    if query and product_id:
+        search_history.log_click(query, product_id)
+        return jsonify({'success': True})
+    return jsonify({'success': False}), 400
 
 @app.route('/add-to-cart/<int:product_id>', methods=['POST'])
 def add_to_cart(product_id):
@@ -364,30 +428,28 @@ def checkout():
         print(f"❌ Checkout error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-  from flask import render_template
+
 
 def send_order_confirmation_email(order):
     try:
         user = User.query.get(order.user_id)
         
+        # Render the template (this is CORRECT - uses Jinja2 properly)
+        body = render_template('emails/order_confirmation.txt', order=order)
+        
         msg = Message(
             subject=f"Order Confirmation - #{order.order_number}",
             recipients=[user.email]
         )
-        
-        # Render HTML template
-        msg.html = render_template('emails/order_confirmation.html', order=order)
-        
-        # Plain text fallback
-        msg.body = f"Order #{order.order_number} confirmed. Total: ₹{order.total}"
-        
+        msg.body = body
         mail.send(msg)
         print(f"✅ Email sent to {user.email}")
         return True
         
     except Exception as e:
         print(f"❌ Email failed: {str(e)}")
-        return False  
+        return False
+    
 
 @app.route('/order-confirmed/<int:order_id>')
 @login_required
@@ -443,116 +505,42 @@ mail = Mail(app)
 def send_order_confirmation_email(order):
     """Send order confirmation email to customer"""
     try:
-        # Get user email
         user = User.query.get(order.user_id)
-        recipient = user.email
         
-        # Create email content
+        # Create email body (NO f-string with Jinja!)
         subject = f"Order Confirmation - #{order.order_number}"
         
-        # Build email body
-        body = f"""
-        Dear {order.customer_name},
+        # Build email body manually
+        body = f"Dear {order.customer_name},\n\n"
+        body += f"Thank you for your order! Order #{order.order_number} has been confirmed.\n\n"
+        body += "Order Details:\n"
+        body += "-" * 50 + "\n"
         
-        Thank you for your order! Your order has been confirmed.
-        
-        Order Details:
-        Order Number: {order.order_number}
-        Order Date: {order.created_at.strftime('%d %B %Y, %I:%M %p')}
-        Payment Method: {order.payment_method.upper()}
-        
-        Items Ordered:
-        """
-        
+        # Loop through items (this is Python, not Jinja)
         for item in order.items:
-            body += f"\n- {item.product_name} x{item.quantity} = ₹{item.subtotal}"
+            body += f"{item.product_name} x{item.quantity} = ₹{item.subtotal}\n"
         
-        body += f"""
+        body += "-" * 50 + "\n"
+        body += f"Subtotal: ₹{order.subtotal}\n"
+        body += f"Shipping: ₹{order.shipping}\n"
+        body += f"TOTAL: ₹{order.total}\n\n"
+        body += f"Shipping Address: {order.address}, {order.city} - {order.pincode}\n\n"
+        body += f"Track your order: {url_for('my_orders', _external=True)}\n\n"
+        body += "Thank you for shopping with Triowise!"
         
-        Subtotal: ₹{order.subtotal}
-        Shipping: ₹{order.shipping}
-        Total: ₹{order.total}
-        
-        Shipping Address:
-        {order.address}
-        {order.city} - {order.pincode}
-        
-        You can track your order at: {url_for('my_orders', _external=True)}
-        
-        Thank you for shopping with Triowise!
-        
-        Best regards,
-        Triowise Team
-        """
-        
-        # Create and send message
-        msg = Message(subject, recipients=[recipient])
+        # Create and send email
+        msg = Message(subject, recipients=[user.email])
         msg.body = body
-        
-        # Optional: Add HTML version
-        msg.html = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 30px; text-align: center; color: white;">
-                <h1>Order Confirmed!</h1>
-                <p>Order #{order.order_number}</p>
-            </div>
-            
-            <div style="padding: 30px;">
-                <p>Dear <strong>{order.customer_name}</strong>,</p>
-                <p>Thank you for your order! Your order has been confirmed and is being processed.</p>
-                
-                <h3 style="color: #333;">Order Summary</h3>
-                <table style="width: 100%; border-collapse: collapse;">
-                    <tr style="background: #f8f9fa;">
-                        <th style="padding: 10px; text-align: left;">Product</th>
-                        <th style="padding: 10px; text-align: center;">Qty</th>
-                        <th style="padding: 10px; text-align: right;">Price</th>
-                    </tr>
-                    {% for item in order.items %}
-                    <tr>
-                        <td style="padding: 10px;">{{ item.product_name }}</td>
-                        <td style="padding: 10px; text-align: center;">{{ item.quantity }}</td>
-                        <td style="padding: 10px; text-align: right;">₹{{ item.subtotal }}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
-                
-                <div style="margin-top: 20px; text-align: right;">
-                    <p><strong>Subtotal:</strong> ₹{{ order.subtotal }}</p>
-                    <p><strong>Shipping:</strong> ₹{{ order.shipping }}</p>
-                    <p style="font-size: 18px;"><strong>Total:</strong> ₹{{ order.total }}</p>
-                </div>
-                
-                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-                    <h4>Shipping Address</h4>
-                    <p>{{ order.address }}, {{ order.city }} - {{ order.pincode }}</p>
-                </div>
-                
-                <div style="margin-top: 30px; text-align: center;">
-                    <a href="{{ url_for('my_orders', _external=True) }}" 
-                       style="background: #667eea; color: white; padding: 12px 30px; 
-                              text-decoration: none; border-radius: 5px; display: inline-block;">
-                        View My Orders
-                    </a>
-                </div>
-                
-                <p style="margin-top: 30px; color: #666; font-size: 14px;">
-                    Thank you for shopping with Triowise!<br>
-                    <small>If you have any questions, contact us at support@triowise.com</small>
-                </p>
-            </div>
-        </body>
-        </html>
-        """
-        
         mail.send(msg)
-        print(f"✅ Email sent to {recipient}")
+        
+        print(f"✅ Order confirmation email sent to {user.email}")
         return True
         
     except Exception as e:
-        print(f"❌ Email failed: {str(e)}")
+        print(f"❌ Failed to send email: {str(e)}")
         return False
+    
+    
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
