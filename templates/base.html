@@ -11,15 +11,25 @@
  
 </head>
 <body data-user-authenticated="{% if current_user.is_authenticated %}true{% else %}false{% endif %}">
-    <!-- Side Nav for Admin (hidden by default) -->
-    <div id="sideNav" class="sidenav">
-        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-        <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
-        <a href="#">Manage Products</a>
-        <a href="#">Orders</a>
-        <a href="#">Users</a>
-    </div>
-
+<!-- Admin Side Navigation -->
+<div id="sideNav" class="sidenav">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <a href="{{ url_for('admin_dashboard') }}">
+        <i class="fa-solid fa-chart-pie"></i> Dashboard
+    </a>
+    <a href="{{ url_for('admin_products') }}">
+        <i class="fa-solid fa-box"></i> Manage Products
+    </a>
+    <a href="{{ url_for('admin_orders') }}">
+        <i class="fa-solid fa-truck"></i> Orders
+    </a>
+    <a href="{{ url_for('admin_users') }}">
+        <i class="fa-solid fa-users"></i> Users
+    </a>
+    <a href="{{ url_for('admin_chats') }}">
+        <i class="fa-solid fa-headset"></i> Live Chats
+    </a>
+</div>
     <header class="navbar">
         <div class="logo">
             <span class="logo-main"><span class="logocolor">Trio</span>wise<span class="logo-badge">plus</span></span>
@@ -57,21 +67,23 @@
     <span class="wishlist-count-badge">{{ current_user.wishlist_items|length }}</span>
     {% endif %}
 </a>
+
+
         <div class="nav-actions">
           <div class="cart-btn" onclick="window.location.href='{{ url_for('cart') }}'">
     <div class="cart-icon-wrapper">
         <i class="fa-solid fa-cart-shopping"></i>
         <span class="cart-count">{{ session.get('cart', [])|length }}</span>
     </div>
-    <span>Cart</span>
+    <span></span>
 </div>
             {% if current_user.is_authenticated %}
                 <!-- Show logout button and admin menu if admin -->
-                {% if current_user.role == 'admin' %}
-                    <button class="menu-btn" onclick="openNav()">
-                        <i class="fa-solid fa-bars"></i>
-                    </button>
-                {% endif %}
+              {% if current_user.role == 'admin' %}
+    <button class="menu-btn" onclick="openNav()">
+        <i class="fa-solid fa-user-gear"></i>
+    </button>
+{% endif %}
                 <a href="{{ url_for('logout') }}" class="login-btn logout-btn">Logout</a>
             {% else %}
                 <button class="login-btn" onclick="showLoginPopup()">Login</button>
@@ -225,6 +237,65 @@
         </div>
     </footer>
 
+<!-- Chat Widget -->
+<div class="chat-widget" id="chatWidget">
+    <!-- Chat Button -->
+    <button class="chat-button" onclick="toggleChat()">
+        <i class="fa-regular fa-message"></i>
+        <span class="chat-notification" id="chatNotification" style="display: none;">1</span>
+    </button>
+    
+    <!-- Chat Window -->
+    <div class="chat-window" id="chatWindow" style="display: none;">
+        <div class="chat-header">
+            <div class="chat-header-info">
+                <h3>Customer Support</h3>
+                <p class="chat-status" id="chatStatus">Online</p>
+            </div>
+            <button class="chat-close" onclick="toggleChat()">
+                <i class="fa-regular fa-times"></i>
+            </button>
+        </div>
+        
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <i class="fa-regular fa-headset"></i>
+                <h4>Welcome to Triowise Support!</h4>
+                <p>How can we help you today?</p>
+            </div>
+        </div>
+        
+        <!-- Chat Input -->
+        <div class="chat-input-area" id="chatInputArea">
+            <!-- Pre-chat form (for guests) -->
+            <div class="pre-chat-form" id="preChatForm">
+                <input type="text" id="chatName" placeholder="Your name" 
+                       value="{{ current_user.name if current_user.is_authenticated else '' }}">
+                <input type="email" id="chatEmail" placeholder="Your email"
+                       value="{{ current_user.email if current_user.is_authenticated else '' }}">
+                <button class="start-chat-btn" onclick="startChat()">
+                    Start Chat
+                </button>
+            </div>
+            
+            <!-- Chat input (hidden initially) -->
+            <div class="chat-input-group" id="chatInputGroup" style="display: none;">
+                <input type="text" id="chatInput" placeholder="Type your message..." 
+                       onkeypress="if(event.key==='Enter') sendMessage()">
+                <button class="send-btn" onclick="sendMessage()">
+                    <i class="fa-regular fa-paper-plane"></i>
+                </button>
+            </div>
+            
+            <!-- Typing indicator -->
+            <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    </div>
+</div>    
+
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 <script>
     // User authentication status - Safe version
@@ -271,7 +342,431 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 </script>
+<script>
+function openNav() {
+    document.getElementById("sideNav").style.width = "250px";
+    document.body.style.overflow = "hidden"; // Prevent scrolling
+}
 
+function closeNav() {
+    document.getElementById("sideNav").style.width = "0";
+    document.body.style.overflow = "auto";
+}
+
+// Close when clicking outside
+window.addEventListener('click', function(event) {
+    const sideNav = document.getElementById('sideNav');
+    const menuBtn = document.querySelector('.menu-btn');
+    
+    if (sideNav && sideNav.style.width === '250px' && 
+        !sideNav.contains(event.target) && 
+        (!menuBtn || !menuBtn.contains(event.target))) {
+        closeNav();
+    }
+});
+</script>
+<!-- Add this in the head section or before your chat script -->
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+<script>
+// ========== COMPLETE CHAT WIDGET JAVASCRIPT ==========
+
+let socket = null;
+let currentChatId = null;
+let isAgent = false;
+
+// Initialize socket connection
+function initSocket() {
+    if (socket) return; // Already connected
+    
+    socket = io();
+    
+    socket.on('connect', function() {
+        console.log('✅ Connected to chat server');
+        updateChatStatus('Online');
+        
+        // Check if user is admin (for agent features)
+        {% if current_user.is_authenticated and current_user.role == 'admin' %}
+        isAgent = true;
+        socket.emit('agent_join', {
+            name: '{{ current_user.name }}'
+        });
+        {% endif %}
+    });
+    
+    socket.on('connect_error', function(error) {
+        console.log('❌ Connection error:', error);
+        updateChatStatus('Offline');
+        showOfflineMessage();
+    });
+    
+    socket.on('chat_started', function(data) {
+        console.log('Chat started:', data);
+        currentChatId = data.chat_id;
+        addSystemMessage(data.message || 'Connecting you to a support agent...');
+        
+        // Switch to chat input mode
+        document.getElementById('preChatForm').style.display = 'none';
+        document.getElementById('chatInputGroup').style.display = 'flex';
+    });
+    
+    socket.on('agent_offline', function(data) {
+        console.log('Agent offline');
+        const chatInputArea = document.getElementById('chatInputArea');
+        chatInputArea.innerHTML = `
+            <div class="offline-message">
+                <p>${data.message || 'No agents are online right now.'}</p>
+                <p>Email us at: <a href="mailto:${data.email || 'support@triowise.com'}">${data.email || 'support@triowise.com'}</a></p>
+                <p>We'll get back to you within 24 hours.</p>
+            </div>
+        `;
+        updateChatStatus('Offline');
+    });
+    
+    socket.on('agent_assigned', function(data) {
+        console.log('Agent assigned:', data);
+        addSystemMessage(data.message || `You are now connected with ${data.agent_name || 'an agent'}`);
+        updateChatStatus(`Connected with ${data.agent_name || 'Agent'}`);
+    });
+    
+    socket.on('new_message', function(data) {
+        console.log('New message:', data);
+        addMessage(data);
+    });
+    
+    socket.on('user_typing', function(data) {
+        if (data.is_typing) {
+            document.getElementById('typingIndicator').style.display = 'flex';
+        } else {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+    });
+    
+    socket.on('chat_ended', function(data) {
+        console.log('Chat ended:', data);
+        addSystemMessage(data.message || 'Chat has ended');
+        
+        // Reset after 3 seconds
+        setTimeout(() => {
+            resetChat();
+        }, 3000);
+    });
+}
+
+// Toggle chat window
+function toggleChat() {
+    const chatWindow = document.getElementById('chatWindow');
+    const isOpen = chatWindow.style.display !== 'none';
+    
+    if (isOpen) {
+        chatWindow.style.display = 'none';
+        // End chat if active
+        if (currentChatId && socket && socket.connected) {
+            socket.emit('end_chat', { chat_id: currentChatId });
+        }
+    } else {
+        chatWindow.style.display = 'flex';
+        chatWindow.style.flexDirection = 'column';
+        
+        // Initialize socket if not already
+        if (!socket) {
+            initSocket();
+        }
+        
+        // Focus on name input
+        setTimeout(() => {
+            document.getElementById('chatName')?.focus();
+        }, 300);
+    }
+}
+
+// Start chat function
+function startChat() {
+    const nameInput = document.getElementById('chatName');
+    const emailInput = document.getElementById('chatEmail');
+    
+    const name = nameInput ? nameInput.value.trim() : '';
+    const email = emailInput ? emailInput.value.trim() : '';
+    
+    if (!name || !email) {
+        alert('Please enter your name and email to start chat');
+        return;
+    }
+    
+    // Validate email
+    if (!email.includes('@') || !email.includes('.')) {
+        alert('Please enter a valid email address');
+        return;
+    }
+    
+    // Disable button to prevent double-click
+    const startBtn = document.querySelector('.start-chat-btn');
+    if (startBtn) {
+        startBtn.disabled = true;
+        startBtn.textContent = 'Connecting...';
+    }
+    
+    // Initialize socket if not already
+    if (!socket) {
+        initSocket();
+    }
+    
+    // Small delay to ensure socket connection
+    setTimeout(() => {
+        if (socket && socket.connected) {
+            socket.emit('start_chat', {
+                name: name,
+                email: email
+            });
+        } else {
+            alert('Unable to connect to chat server. Please try again later.');
+            if (startBtn) {
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Chat';
+            }
+        }
+    }, 500);
+}
+
+// Send message
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message || !currentChatId || !socket || !socket.connected) {
+        alert('Cannot send message. Please check your connection.');
+        return;
+    }
+    
+    const messageData = {
+        chat_id: currentChatId,
+        message: message,
+        sender: isAgent ? 'agent' : 'user'
+    };
+    
+    socket.emit('send_message', messageData);
+    
+    // Clear input
+    input.value = '';
+    
+    // Stop typing indicator
+    socket.emit('typing', {
+        chat_id: currentChatId,
+        is_typing: false
+    });
+}
+
+// Add message to chat window
+function addMessage(data) {
+    const messagesDiv = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${data.sender}`;
+    
+    const senderName = data.sender_name || (data.sender === 'user' ? 'You' : 'Support');
+    const time = data.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    messageDiv.innerHTML = `
+        <div class="message-sender">${senderName}</div>
+        <div class="message-content">${data.message}</div>
+        <div class="message-time">${time}</div>
+    `;
+    
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// Add system message
+function addSystemMessage(message) {
+    const messagesDiv = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message system';
+    messageDiv.innerHTML = `<div class="message-content system">${message}</div>`;
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// Update chat status
+function updateChatStatus(status) {
+    const statusEl = document.getElementById('chatStatus');
+    if (statusEl) {
+        statusEl.textContent = status;
+        if (status === 'Online') {
+            statusEl.style.color = '#4ade80';
+        } else if (status === 'Offline') {
+            statusEl.style.color = '#ff4d4d';
+        }
+    }
+}
+
+// Show offline message
+function showOfflineMessage() {
+    const chatInputArea = document.getElementById('chatInputArea');
+    chatInputArea.innerHTML = `
+        <div class="offline-message">
+            <p>😔 Chat service is currently offline</p>
+            <p>Please email us at: <a href="mailto:support@triowise.com">support@triowise.com</a></p>
+            <p>Or call us: <a href="tel:+919043345140">+91-9043345140</a></p>
+        </div>
+    `;
+}
+
+// Reset chat to initial state
+function resetChat() {
+    currentChatId = null;
+    
+    const messagesDiv = document.getElementById('chatMessages');
+    messagesDiv.innerHTML = `
+        <div class="welcome-message">
+            <i class="fa-regular fa-headset"></i>
+            <h4>Welcome to Triowise Support!</h4>
+            <p>How can we help you today?</p>
+        </div>
+    `;
+    
+    const preChatForm = document.getElementById('preChatForm');
+    const chatInputGroup = document.getElementById('chatInputGroup');
+    const chatInputArea = document.getElementById('chatInputArea');
+    
+    if (preChatForm) preChatForm.style.display = 'flex';
+    if (chatInputGroup) chatInputGroup.style.display = 'none';
+    
+    // Reset form if it exists
+    const nameInput = document.getElementById('chatName');
+    const emailInput = document.getElementById('chatEmail');
+    const startBtn = document.querySelector('.start-chat-btn');
+    
+    if (nameInput) nameInput.value = '{{ current_user.name if current_user.is_authenticated else '' }}';
+    if (emailInput) emailInput.value = '{{ current_user.email if current_user.is_authenticated else '' }}';
+    if (startBtn) {
+        startBtn.disabled = false;
+        startBtn.textContent = 'Start Chat';
+    }
+    
+    updateChatStatus('Online');
+}
+
+// Typing indicator
+let typingTimer;
+document.addEventListener('DOMContentLoaded', function() {
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) {
+        chatInput.addEventListener('input', function() {
+            if (!currentChatId || !socket || !socket.connected) return;
+            
+            clearTimeout(typingTimer);
+            
+            socket.emit('typing', {
+                chat_id: currentChatId,
+                is_typing: true
+            });
+            
+            typingTimer = setTimeout(() => {
+                socket.emit('typing', {
+                    chat_id: currentChatId,
+                    is_typing: false
+                });
+            }, 1000);
+        });
+    }
+});
+
+// Close chat when clicking outside
+document.addEventListener('click', function(event) {
+    const chatWidget = document.getElementById('chatWidget');
+    const chatWindow = document.getElementById('chatWindow');
+    
+    if (!chatWidget || !chatWindow) return;
+    
+    if (!chatWidget.contains(event.target) && chatWindow.style.display !== 'none') {
+        chatWindow.style.display = 'none';
+        // End chat if active
+        if (currentChatId && socket && socket.connected) {
+            socket.emit('end_chat', { chat_id: currentChatId });
+        }
+    }
+});
+
+// Handle page unload
+window.addEventListener('beforeunload', function() {
+    if (currentChatId && socket && socket.connected) {
+        socket.emit('end_chat', { chat_id: currentChatId });
+    }
+});
+</script>
+<script>
+// ========== CHAT WIDGET FUNCTIONS ==========
+
+function toggleChat() {
+    const chatWindow = document.getElementById('chatWindow');
+    const chatButton = document.querySelector('.chat-button');
+    
+    if (!chatWindow) return;
+    
+    // Check if chat window is currently visible
+    const isOpen = chatWindow.style.display !== 'none';
+    
+    if (isOpen) {
+        // Close chat
+        chatWindow.style.display = 'none';
+        chatButton.style.backgroundColor = ''; // Reset to default
+    } else {
+        // Open chat
+        chatWindow.style.display = 'flex';
+        chatWindow.style.flexDirection = 'column';
+        chatButton.style.backgroundColor = '#764ba2'; // Darker when open
+        
+        // Auto-focus on name input if pre-chat form is visible
+        const preChatForm = document.getElementById('preChatForm');
+        if (preChatForm && preChatForm.style.display !== 'none') {
+            setTimeout(() => {
+                document.getElementById('chatName')?.focus();
+            }, 300);
+        } else {
+            setTimeout(() => {
+                document.getElementById('chatInput')?.focus();
+            }, 300);
+        }
+    }
+}
+
+// Optional: Close chat when clicking outside
+document.addEventListener('click', function(event) {
+    const chatWidget = document.getElementById('chatWidget');
+    const chatWindow = document.getElementById('chatWindow');
+    const chatButton = document.querySelector('.chat-button');
+    
+    if (!chatWidget || !chatWindow || !chatButton) return;
+    
+    // If click is outside chat widget and chat is open
+    if (!chatWidget.contains(event.target) && chatWindow.style.display !== 'none') {
+        chatWindow.style.display = 'none';
+        chatButton.style.backgroundColor = '';
+    }
+});
+
+// Optional: Add a simple test message to show it works
+document.addEventListener('DOMContentLoaded', function() {
+    // Just for testing - remove in production
+    console.log('Chat widget loaded. Click the chat button to test.');
+    
+    // Uncomment the next line to auto-open chat for testing
+    // setTimeout(() => toggleChat(), 2000);
+});
+</script>
+    <script>
+    // ========== CHAT WIDGET FUNCTIONS ==========
+    function toggleChat() {
+        const chatWindow = document.getElementById('chatWindow');
+        if (chatWindow) {
+            if (chatWindow.style.display === 'none' || chatWindow.style.display === '') {
+                chatWindow.style.display = 'flex';
+                chatWindow.style.flexDirection = 'column';
+            } else {
+                chatWindow.style.display = 'none';
+            }
+        }
+    }
+    </script>
 <script>
 // Login Popup Functionality
 document.addEventListener('DOMContentLoaded', function() {

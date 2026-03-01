@@ -1,12 +1,74 @@
 {% extends "base.html" %}
+
 {% block title %}About Us - Triowise{% endblock %}
+
 {% block content %}
 <div class="about-page">
-    <!-- Hero Section -->
+    <!-- Hero Section with Personal Touch -->
     <section class="about-hero">
         <div class="container">
             <h1>About Triowise</h1>
-            <p>Your trusted marketplace for quality products from verified sellers</p>
+            <p>Your trusted marketplace built with passion by <span class="highlight">Siva K</span></p>
+            <div class="hero-badge">
+                <span class="badge-item"><i class="fa-solid fa-graduation-cap"></i> BSc Computer Science</span>
+                <span class="badge-item"><i class="fa-solid fa-certificate"></i> Diploma in Full Stack Java</span>
+                <span class="badge-item"><i class="fa-solid fa-code"></i> Zoho Creator Expert</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Creator Section - Your Personal Introduction -->
+    <section class="creator-section">
+        <div class="container">
+            <div class="creator-card">
+                <div class="creator-image">
+                    <!-- Default male avatar image - replace this file with your photo -->
+                    <img src="{{ url_for('static', filename='images/male-avatar.png') }}" alt="Siva K" id="profileImage">
+                    <div class="image-upload-hint" onclick="document.getElementById('fileInput').click()">
+                        <i class="fa-solid fa-camera"></i> Change Photo
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="previewImage(this)">
+                </div>
+                <div class="creator-info">
+                    <h2>Siva K</h2>
+                    <p class="creator-title">Founder & Full Stack Developer</p>
+                    <div class="creator-education">
+                        <p><i class="fa-solid fa-graduation-cap"></i> BSc Computer Science - S.T. Hindu College, Nagercoil</p>
+                        <p><i class="fa-solid fa-certificate"></i> Diploma in Full Stack Java Development</p>
+                        <p><i class="fa-solid fa-brain"></i> Zoho Creator Specialist | Web Developer</p>
+                    </div>
+                    <p class="creator-bio">
+                        Passionate about building innovative web solutions and creating seamless user experiences. 
+                        This Triowise marketplace is my major project, showcasing the skills I've developed throughout 
+                        my academic journey and professional training.
+                    </p>
+                    
+                    <!-- Social Media Links - Add Your URLs Here -->
+                    <div class="creator-social">
+                        <h4>Connect with me:</h4>
+                        <div class="social-links">
+                            <a href="https://instagram.com/yourusername" target="_blank" class="social-icon instagram" title="Instagram">
+                                <i class="fa-brands fa-instagram"></i>
+                            </a>
+                            <a href="https://linkedin.com/in/yourusername" target="_blank" class="social-icon linkedin" title="LinkedIn">
+                                <i class="fa-brands fa-linkedin-in"></i>
+                            </a>
+                            <a href="https://github.com/yourusername" target="_blank" class="social-icon github" title="GitHub">
+                                <i class="fa-brands fa-github"></i>
+                            </a>
+                            <a href="https://wa.me/919043345140" target="_blank" class="social-icon whatsapp" title="WhatsApp">
+                                <i class="fa-brands fa-whatsapp"></i>
+                            </a>
+                            <a href="mailto:ksiva2005@gmail.com" class="social-icon email" title="Email">
+                                <i class="fa-regular fa-envelope"></i>
+                            </a>
+                            <a href="#" class="social-icon portfolio" title="Portfolio">
+                                <i class="fa-regular fa-file"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -16,29 +78,68 @@
             <div class="story-grid">
                 <div class="story-content">
                     <h2>Our Story</h2>
-                    <p>Founded in 2024, Triowise began with a simple mission: to create a platform where customers can find the best products from trusted sellers, all in one place. What started as a small idea has grown into a thriving marketplace serving thousands of customers daily.</p>
-                    <p>We believe in transparency, quality, and customer satisfaction. Every seller on our platform is verified, and every product goes through a quality check to ensure you get exactly what you ordered.</p>
+                    <p>Founded in 2024 by <strong>Siva K</strong>, Triowise began as a major project during his BSc Computer Science at S.T. Hindu College, Nagercoil. What started as a college project has evolved into a fully functional e-commerce marketplace.</p>
+                    <p>Leveraging skills from his <strong>Diploma in Full Stack Java</strong> and expertise in <strong>Zoho Creator</strong>, Siva built this platform to demonstrate how modern web technologies can create seamless shopping experiences. The name "Triowise" represents the three pillars of wisdom in e-commerce: Trust, Quality, and Innovation.</p>
                     <div class="stats-container">
                         <div class="stat-item">
-                            <span class="stat-number">50K+</span>
-                            <span class="stat-label">Happy Customers</span>
+                            <span class="stat-number">6+</span>
+                            <span class="stat-label">Months Development</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">10K+</span>
-                            <span class="stat-label">Products</span>
+                            <span class="stat-number">3</span>
+                            <span class="stat-label">Technologies</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">1000+</span>
-                            <span class="stat-label">Verified Sellers</span>
+                            <span class="stat-number">1</span>
+                            <span class="stat-label">Passionate Developer</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">24/7</span>
-                            <span class="stat-label">Support</span>
+                            <span class="stat-number">∞</span>
+                            <span class="stat-label">Learning</span>
                         </div>
                     </div>
                 </div>
                 <div class="story-image">
-                    <img src="https://images.unsplash.com/photo-1556740714-a8395b3b30d7?w=600&h=400&fit=crop" alt="Our team at work">
+                    <img src="https://images.unsplash.com/photo-1556740714-a8395b3b30d7?w=600&h=400&fit=crop" alt="Development journey">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills & Technologies Section -->
+    <section class="skills-section">
+        <div class="container">
+            <h2>Technologies & Skills</h2>
+            <div class="skills-grid">
+                <div class="skill-card">
+                    <i class="fa-brands fa-python"></i>
+                    <h3>Python/Flask</h3>
+                    <p>Backend development with Flask framework</p>
+                </div>
+                <div class="skill-card">
+                    <i class="fa-brands fa-java"></i>
+                    <h3>Java (Full Stack)</h3>
+                    <p>Diploma in Full Stack Java Development</p>
+                </div>
+                <div class="skill-card">
+                    <i class="fa-solid fa-database"></i>
+                    <h3>SQLAlchemy</h3>
+                    <p>Database management with SQLite/PostgreSQL</p>
+                </div>
+                <div class="skill-card">
+                    <i class="fa-brands fa-html5"></i>
+                    <h3>HTML5/CSS3</h3>
+                    <p>Responsive frontend design</p>
+                </div>
+                <div class="skill-card">
+                    <i class="fa-brands fa-js"></i>
+                    <h3>JavaScript</h3>
+                    <p>Interactive UI components</p>
+                </div>
+                <div class="skill-card">
+                    <i class="fa-solid fa-cube"></i>
+                    <h3>Zoho Creator</h3>
+                    <p>Low-code application development</p>
                 </div>
             </div>
         </div>
@@ -47,84 +148,35 @@
     <!-- Our Values Section -->
     <section class="our-values">
         <div class="container">
-            <h2>Our Core Values</h2>
+            <h2>Core Values</h2>
             <div class="values-grid">
                 <div class="value-card">
                     <div class="value-icon">
                         <i class="fa-solid fa-shield"></i>
                     </div>
                     <h3>Trust & Transparency</h3>
-                    <p>We verify every seller and product to ensure you shop with confidence.</p>
+                    <p>Built with integrity, just like my academic journey</p>
                 </div>
                 <div class="value-card">
                     <div class="value-icon">
                         <i class="fa-solid fa-star"></i>
                     </div>
                     <h3>Quality First</h3>
-                    <p>Every product listed meets our quality standards before reaching you.</p>
+                    <p>Striving for excellence in every line of code</p>
                 </div>
                 <div class="value-card">
                     <div class="value-icon">
-                        <i class="fa-solid fa-truck"></i>
+                        <i class="fa-solid fa-graduation-cap"></i>
                     </div>
-                    <h3>Fast Delivery</h3>
-                    <p>We partner with reliable logistics partners to ensure timely delivery.</p>
+                    <h3>Continuous Learning</h3>
+                    <p>Always upgrading skills, from college to certifications</p>
                 </div>
                 <div class="value-card">
                     <div class="value-icon">
-                        <i class="fa-solid fa-headset"></i>
+                        <i class="fa-solid fa-handshake"></i>
                     </div>
-                    <h3>Customer First</h3>
-                    <p>Our support team is available 24/7 to assist you with any queries.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Team Section -->
-    <section class="team-section">
-        <div class="container">
-            <h2>Meet Our Leadership</h2>
-            <div class="team-grid">
-                <div class="team-card">
-                    <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=300&h=300&fit=crop" alt="CEO">
-                    <h3>Rajesh Kumar</h3>
-                    <p class="position">CEO & Founder</p>
-                    <p class="bio">15+ years in e-commerce, passionate about creating seamless shopping experiences.</p>
-                    <div class="social-links">
-                        <a href="#"><i class="fa-brands fa-linkedin"></i></a>
-                        <a href="#"><i class="fa-brands fa-twitter"></i></a>
-                    </div>
-                </div>
-                <div class="team-card">
-                    <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&h=300&fit=crop" alt="COO">
-                    <h3>Priya Sharma</h3>
-                    <p class="position">Chief Operating Officer</p>
-                    <p class="bio">Expert in operations and supply chain management with a decade of experience.</p>
-                    <div class="social-links">
-                        <a href="#"><i class="fa-brands fa-linkedin"></i></a>
-                        <a href="#"><i class="fa-brands fa-twitter"></i></a>
-                    </div>
-                </div>
-                <div class="team-card">
-                    <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=300&h=300&fit=crop" alt="CTO">
-                    <h3>Amit Patel</h3>
-                    <p class="position">Chief Technology Officer</p>
-                    <p class="bio">Tech visionary leading our engineering team to build scalable solutions.</p>
-                    <div class="social-links">
-                        <a href="#"><i class="fa-brands fa-linkedin"></i></a>
-                        <a href="#"><i class="fa-brands fa-twitter"></i></a>
-                    </div>
-                </div>
-                <div class="team-card">
-                    <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&h=300&fit=crop" alt="CMO">
-                    <h3>Neha Gupta</h3>
-                    <p class="position">Chief Marketing Officer</p>
-                    <p class="bio">Marketing strategist focused on building brand love and customer loyalty.</p>
-                    <div class="social-links">
-                        <a href="#"><i class="fa-brands fa-linkedin"></i></a>
-                        <a href="#"><i class="fa-brands fa-twitter"></i></a>
-                    </div>
+                    <h3>Community First</h3>
+                    <p>Building solutions that help others</p>
                 </div>
             </div>
         </div>
@@ -138,43 +190,43 @@
                 <div class="feature-item">
                     <i class="fa-solid fa-circle-check"></i>
                     <div>
-                        <h4>Verified Sellers</h4>
-                        <p>All sellers undergo strict verification process</p>
+                        <h4>Student Project</h4>
+                        <p>Built with passion by a BSc Computer Science student</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <i class="fa-solid fa-circle-check"></i>
                     <div>
-                        <h4>Secure Payments</h4>
-                        <p>100% secure payment gateways</p>
+                        <h4>Full Stack Java</h4>
+                        <p>Leveraging professional diploma training</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <i class="fa-solid fa-circle-check"></i>
                     <div>
-                        <h4>Easy Returns</h4>
-                        <p>7-day easy return policy</p>
+                        <h4>Zoho Creator Expertise</h4>
+                        <p>Low-code development skills applied</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <i class="fa-solid fa-circle-check"></i>
                     <div>
-                        <h4>24/7 Support</h4>
-                        <p>Round-the-clock customer service</p>
+                        <h4>College Project</h4>
+                        <p>S.T. Hindu College, Nagercoil - BSc Computer Science</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <i class="fa-solid fa-circle-check"></i>
                     <div>
-                        <h4>Free Shipping</h4>
-                        <p>On orders above ₹500</p>
+                        <h4>Open for Opportunities</h4>
+                        <p>Looking for internships and job opportunities</p>
                     </div>
                 </div>
                 <div class="feature-item">
                     <i class="fa-solid fa-circle-check"></i>
                     <div>
-                        <h4>Best Prices</h4>
-                        <p>Competitive prices guaranteed</p>
+                        <h4>Continuous Improvement</h4>
+                        <p>Regularly updated with new features</p>
                     </div>
                 </div>
             </div>
@@ -182,99 +234,438 @@
     </section>
 </div>
 
+<!-- Image Upload Script -->
+<script>
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profileImage').src = e.target.result;
+            // You can add AJAX here to save the image
+            alert('Profile image updated! (In a real app, this would save to server)');
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+
 <style>
+/* ========== PROFESSIONAL ABOUT PAGE STYLES ========== */
+
 .about-page {
-    background: #f5f5f5;
+    font-family: 'Inter', sans-serif;
+    background: #f8fafc;
+    overflow-x: hidden;
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
 }
 
 /* Hero Section */
 .about-hero {
-    background: linear-gradient(135deg, #2150be 0%, #0d8423 100%);
-    color: rgb(255, 255, 255);
-    padding: 80px 20px;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    padding: 100px 20px;
     text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.about-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: moveBackground 60s linear infinite;
+}
+
+@keyframes moveBackground {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(50px, 50px); }
 }
 
 .about-hero h1 {
-    font-size: 48px;
-    margin-bottom: 15px;
+    font-size: 52px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    position: relative;
 }
 
 .about-hero p {
-    font-size: 20px;
+    font-size: 22px;
     opacity: 0.95;
     max-width: 600px;
+    margin: 0 auto 30px;
+    position: relative;
+}
+
+.about-hero .highlight {
+    color: #ffd700;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.hero-badge {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    position: relative;
+}
+
+.badge-item {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    padding: 10px 25px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+    transition: all 0.3s ease;
+}
+
+.badge-item:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateY(-3px);
+}
+
+/* Creator Section */
+.creator-section {
+    padding: 80px 20px;
+    background: white;
+}
+
+.creator-card {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 50px;
+    background: white;
+    border-radius: 30px;
+    padding: 40px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    max-width: 1000px;
     margin: 0 auto;
 }
 
-/* Our Story */
-.our-story {
+.creator-image {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+.creator-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.creator-image:hover img {
+    transform: scale(1.05);
+}
+
+.image-upload-hint {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    color: white;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.creator-image:hover .image-upload-hint {
+    opacity: 1;
+}
+
+.creator-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.creator-info h2 {
+    font-size: 42px;
+    font-weight: 800;
+    color: #1e3c72;
+    margin-bottom: 5px;
+}
+
+.creator-title {
+    font-size: 18px;
+    color: #2a5298;
+    font-weight: 500;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.creator-education {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.creator-education p {
+    margin-bottom: 10px;
+    font-size: 15px;
+    color: #4a5568;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.creator-education i {
+    color: #2a5298;
+    width: 24px;
+}
+
+.creator-bio {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #718096;
+    margin-bottom: 25px;
+}
+
+/* Social Links */
+.creator-social h4 {
+    font-size: 16px;
+    color: #4a5568;
+    margin-bottom: 15px;
+}
+
+.social-links {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.social-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.social-icon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.2);
+    transform: scale(0);
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.social-icon:hover::before {
+    transform: scale(1);
+}
+
+.social-icon:hover {
+    transform: translateY(-5px);
+}
+
+.social-icon.instagram { background: linear-gradient(45deg, #f09433, #d62976, #962fbf); }
+.social-icon.linkedin { background: #0077b5; }
+.social-icon.github { background: #333; }
+.social-icon.whatsapp { background: #25d366; }
+.social-icon.email { background: #ea4335; }
+.social-icon.portfolio { background: #6c5ce7; }
+
+/* Skills Section */
+.skills-section {
     padding: 80px 20px;
+    background: #f8fafc;
+    text-align: center;
+}
+
+.skills-section h2 {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1e3c72;
+    margin-bottom: 40px;
+    position: relative;
+    display: inline-block;
+}
+
+.skills-section h2::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, #1e3c72, #2a5298);
+    border-radius: 2px;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.skill-card {
+    background: white;
+    padding: 35px 25px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.skill-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(30, 60, 114, 0.15);
+}
+
+.skill-card i {
+    font-size: 48px;
+    color: #2a5298;
+    margin-bottom: 20px;
+}
+
+.skill-card h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.skill-card p {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* Our Story Section */
+.our-story {
+    padding: 100px 20px;
     background: white;
 }
 
 .story-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 50px;
+    gap: 60px;
     align-items: center;
     max-width: 1200px;
     margin: 0 auto;
 }
 
 .story-content h2 {
-    font-size: 36px;
-    color: #212121;
-    margin-bottom: 20px;
+    font-size: 42px;
+    font-weight: 800;
+    color: #1e3c72;
+    margin-bottom: 25px;
+    line-height: 1.2;
 }
 
 .story-content p {
-    color: #666;
+    color: #4a5568;
     line-height: 1.8;
     margin-bottom: 20px;
+    font-size: 16px;
 }
 
 .stats-container {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    gap: 25px;
     margin-top: 40px;
 }
 
 .stat-item {
     text-align: center;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-5px);
+    background: #e2e8f0;
 }
 
 .stat-number {
     display: block;
-    font-size: 32px;
-    font-weight: 700;
-    color: #2874f0;
+    font-size: 36px;
+    font-weight: 800;
+    color: #2a5298;
     margin-bottom: 5px;
+    line-height: 1;
 }
 
 .stat-label {
-    color: #666;
-    font-size: 14px;
+    color: #4a5568;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.story-image {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.1);
 }
 
 .story-image img {
     width: 100%;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    height: auto;
+    display: block;
+    transition: transform 0.5s ease;
 }
 
-/* Our Values */
+.story-image:hover img {
+    transform: scale(1.05);
+}
+
+/* Values Section */
 .our-values {
-    padding: 80px 20px;
-    background: #f8f9fa;
+    padding: 100px 20px;
+    background: #f8fafc;
     text-align: center;
 }
 
 .our-values h2 {
-    font-size: 36px;
-    color: #212121;
-    margin-bottom: 40px;
+    font-size: 42px;
+    font-weight: 800;
+    color: #1e3c72;
+    margin-bottom: 50px;
 }
 
 .values-grid {
@@ -287,173 +678,120 @@
 
 .value-card {
     background: white;
-    padding: 40px 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    transition: transform 0.3s;
+    padding: 40px 25px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
 }
 
 .value-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(30, 60, 114, 0.15);
 }
 
 .value-icon {
-    width: 70px;
-    height: 70px;
-    background: #e3f2fd;
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 20px;
+    margin: 0 auto 25px;
 }
 
 .value-icon i {
-    font-size: 30px;
-    color: #2874f0;
+    font-size: 36px;
+    color: #2a5298;
 }
 
 .value-card h3 {
-    font-size: 18px;
-    margin-bottom: 10px;
-    color: #212121;
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 15px;
 }
 
 .value-card p {
     color: #666;
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1.6;
-}
-
-/* Team Section */
-.team-section {
-    padding: 80px 20px;
-    background: white;
-    text-align: center;
-}
-
-.team-section h2 {
-    font-size: 36px;
-    color: #212121;
-    margin-bottom: 40px;
-}
-
-.team-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 30px;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.team-card {
-    background: #f8f9fa;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    transition: transform 0.3s;
-}
-
-.team-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-}
-
-.team-card img {
-    width: 100%;
-    height: 250px;
-    object-fit: cover;
-}
-
-.team-card h3 {
-    font-size: 18px;
-    margin: 15px 0 5px;
-    color: #212121;
-}
-
-.team-card .position {
-    color: #2874f0;
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 10px;
-}
-
-.team-card .bio {
-    color: #666;
-    font-size: 13px;
-    padding: 0 15px 15px;
-    line-height: 1.6;
-}
-
-.team-card .social-links {
-    padding: 0 15px 20px;
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-}
-
-.team-card .social-links a {
-    color: #666;
-    font-size: 18px;
-    transition: color 0.2s;
-}
-
-.team-card .social-links a:hover {
-    color: #2874f0;
 }
 
 /* Why Choose Us */
 .why-choose-us {
-    padding: 60px 20px;
-    background: #2874f0;
+    padding: 80px 20px;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
     color: white;
-    text-align: center;
 }
 
 .why-choose-us h2 {
-    font-size: 36px;
-    margin-bottom: 40px;
+    font-size: 42px;
+    font-weight: 800;
+    margin-bottom: 50px;
+    text-align: center;
 }
 
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
     max-width: 1000px;
     margin: 0 auto;
 }
 
 .feature-item {
     display: flex;
-    align-items: center;
-    gap: 15px;
-    text-align: left;
+    align-items: flex-start;
+    gap: 20px;
     background: rgba(255,255,255,0.1);
-    padding: 20px;
-    border-radius: 8px;
+    padding: 25px;
+    border-radius: 12px;
     backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.feature-item:hover {
+    transform: translateX(10px);
+    background: rgba(255,255,255,0.15);
 }
 
 .feature-item i {
-    font-size: 30px;
-    color: #ff9f00;
+    font-size: 32px;
+    color: #ffd700;
+    flex-shrink: 0;
 }
 
 .feature-item h4 {
-    font-size: 16px;
-    margin-bottom: 5px;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
 }
 
 .feature-item p {
-    font-size: 13px;
+    font-size: 14px;
     opacity: 0.9;
+    line-height: 1.5;
 }
 
-/* Responsive */
+/* Responsive Design */
 @media screen and (max-width: 1024px) {
-    .values-grid,
-    .team-grid {
+    .creator-card {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+    }
+    
+    .story-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+    
+    .values-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stats-container {
         grid-template-columns: repeat(2, 1fr);
     }
 }
@@ -467,28 +805,57 @@
         font-size: 18px;
     }
     
-    .story-grid {
+    .hero-badge {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .badge-item {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .creator-info h2 {
+        font-size: 32px;
+    }
+    
+    .skills-grid {
         grid-template-columns: 1fr;
     }
     
-    .stats-container {
-        grid-template-columns: repeat(2, 1fr);
+    .values-grid {
+        grid-template-columns: 1fr;
     }
     
-    .values-grid,
-    .team-grid,
     .features-grid {
         grid-template-columns: 1fr;
     }
     
-    .feature-item {
-        padding: 15px;
+    .stats-container {
+        grid-template-columns: 1fr;
     }
 }
 
 @media screen and (max-width: 480px) {
-    .stats-container {
-        grid-template-columns: 1fr;
+    .about-hero h1 {
+        font-size: 28px;
+    }
+    
+    .creator-card {
+        padding: 20px;
+    }
+    
+    .social-links {
+        justify-content: center;
+    }
+    
+    .feature-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .feature-item i {
+        margin-bottom: 10px;
     }
 }
 </style>

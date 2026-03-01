@@ -243,3 +243,200 @@ function toggleWishlist(productId, event) {
         btn.style.pointerEvents = 'auto';
     });
 }
+
+
+// Chat functionality
+let socket = null;
+let currentChatId = null;
+let isAgent = false; // Set to true for support agents
+
+function initChat() {
+    // Connect to SocketIO server
+    socket = io();
+    
+    // Socket event handlers
+    socket.on('connect', function() {
+        console.log('Connected to chat server');
+        
+        // If user is support agent, join as agent
+        if (isAgent) {
+            socket.emit('agent_join', {
+                name: '{{ current_user.name if current_user.is_authenticated else "Support Agent" }}'
+            });
+        }
+    });
+    
+    socket.on('chat_started', function(data) {
+        currentChatId = data.chat_id;
+        addSystemMessage(data.message);
+        
+        // Show chat input
+        document.getElementById('preChatForm').style.display = 'none';
+        document.getElementById('chatInputGroup').style.display = 'flex';
+    });
+    
+    socket.on('agent_offline', function(data) {
+        document.getElementById('chatInputArea').innerHTML = `
+            <div class="offline-message">
+                <p>${data.message}</p>
+                <p>Email us at: <a href="mailto:${data.email}">${data.email}</a></p>
+            </div>
+        `;
+    });
+    
+    socket.on('agent_assigned', function(data) {
+        addSystemMessage(data.message);
+        updateChatStatus('Connected with ' + data.agent_name);
+    });
+    
+    socket.on('new_message', function(data) {
+        addMessage(data);
+    });
+    
+    socket.on('user_typing', function(data) {
+        if (data.is_typing) {
+            document.getElementById('typingIndicator').style.display = 'flex';
+        } else {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+    });
+    
+    socket.on('chat_ended', function(data) {
+        addSystemMessage(data.message);
+        
+        // Reset chat after 3 seconds
+        setTimeout(() => {
+            resetChat();
+        }, 3000);
+    });
+}
+
+function toggleChat() {
+    const chatWindow = document.getElementById('chatWindow');
+    const isOpen = chatWindow.style.display !== 'none';
+    
+    if (isOpen) {
+        chatWindow.style.display = 'none';
+        // End chat if active
+        if (currentChatId && socket) {
+            socket.emit('end_chat', { chat_id: currentChatId });
+        }
+    } else {
+        chatWindow.style.display = 'flex';
+        chatWindow.style.flexDirection = 'column';
+        
+        // Initialize socket if not already
+        if (!socket) {
+            initChat();
+        }
+    }
+}
+
+function startChat() {
+    const name = document.getElementById('chatName').value;
+    const email = document.getElementById('chatEmail').value;
+    
+    if (!name || !email) {
+        alert('Please enter your name and email');
+        return;
+    }
+    
+    socket.emit('start_chat', {
+        name: name,
+        email: email
+    });
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message || !currentChatId) return;
+    
+    const messageData = {
+        chat_id: currentChatId,
+        message: message,
+        sender: isAgent ? 'agent' : 'user'
+    };
+    
+    socket.emit('send_message', messageData);
+    
+    // Clear input
+    input.value = '';
+    
+    // Stop typing indicator
+    socket.emit('typing', {
+        chat_id: currentChatId,
+        is_typing: false
+    });
+}
+
+function addMessage(data) {
+    const messagesDiv = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${data.sender}`;
+    
+    messageDiv.innerHTML = `
+        <div class="message-sender">${data.sender_name || (data.sender === 'user' ? 'You' : 'Support')}</div>
+        <div class="message-content">${data.message}</div>
+        <div class="message-time">${data.timestamp || new Date().toLocaleTimeString()}</div>
+    `;
+    
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function addSystemMessage(message) {
+    const messagesDiv = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message system';
+    messageDiv.innerHTML = `<div class="message-content system">${message}</div>`;
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function updateChatStatus(status) {
+    document.getElementById('chatStatus').textContent = status;
+}
+
+function resetChat() {
+    currentChatId = null;
+    document.getElementById('chatMessages').innerHTML = `
+        <div class="welcome-message">
+            <i class="fa-regular fa-headset"></i>
+            <h4>Welcome to Triowise Support!</h4>
+            <p>How can we help you today?</p>
+        </div>
+    `;
+    document.getElementById('preChatForm').style.display = 'flex';
+    document.getElementById('chatInputGroup').style.display = 'none';
+    updateChatStatus('Online');
+}
+
+// Typing indicator
+let typingTimer;
+document.getElementById('chatInput')?.addEventListener('input', function() {
+    if (!currentChatId) return;
+    
+    clearTimeout(typingTimer);
+    
+    socket.emit('typing', {
+        chat_id: currentChatId,
+        is_typing: true
+    });
+    
+    typingTimer = setTimeout(() => {
+        socket.emit('typing', {
+            chat_id: currentChatId,
+            is_typing: false
+        });
+    }, 1000);
+});
+
+// Initialize chat on page load if user is agent
+document.addEventListener('DOMContentLoaded', function() {
+    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+    isAgent = true;
+    initChat();
+    {% endif %}
+});

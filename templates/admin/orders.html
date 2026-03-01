@@ -1,0 +1,823 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Orders - Admin{% endblock %}
+
+{% block content %}
+<div class="orders-page">
+    <!-- Header -->
+    <div class="orders-header">
+        <h1>
+            <i class="fa-solid fa-truck"></i> 
+            Manage Orders
+        </h1>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Back to Dashboard</a>
+    </div>
+    
+    <!-- Order Stats -->
+    <div class="order-stats">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fa-solid fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</h3>
+                <p>Pending</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fa-solid fa-gear"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ orders|selectattr('status', 'equalto', 'processing')|list|length }}</h3>
+                <p>Processing</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fa-solid fa-box"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ orders|selectattr('status', 'equalto', 'shipped')|list|length }}</h3>
+                <p>Shipped</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fa-solid fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ orders|selectattr('status', 'equalto', 'delivered')|list|length }}</h3>
+                <p>Delivered</p>
+            </div>
+        </div>
+        <div class="stat-card cancelled">
+            <div class="stat-icon">
+                <i class="fa-solid fa-ban"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ orders|selectattr('status', 'equalto', 'cancelled')|list|length }}</h3>
+                <p>Cancelled</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filters-bar">
+        <div class="filter-group">
+            <label>Status Filter</label>
+            <select id="statusFilter" onchange="filterOrders()">
+                <option value="all">All Orders</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Date Range</label>
+            <select id="dateFilter" onchange="filterOrders()">
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="year">This Year</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Search</label>
+            <input type="text" id="searchInput" placeholder="Order # or Customer..." onkeyup="filterOrders()">
+        </div>
+        <button class="export-btn" onclick="exportOrders()">
+            <i class="fa-solid fa-download"></i> Export
+        </button>
+    </div>
+    
+    <!-- Orders Table -->
+    <div class="table-container">
+        <table class="orders-table" id="ordersTable">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr class="order-row" data-status="{{ order.status }}" data-date="{{ order.created_at.strftime('%Y-%m-%d') }}">
+                    <td class="order-number">#{{ order.order_number }}</td>
+                    <td>
+                        <div class="customer-info">
+                            <div class="customer-avatar">
+                                {{ order.customer_name[0]|upper }}
+                            </div>
+                            <div>
+                                <div class="customer-name">{{ order.customer_name }}</div>
+                                <div class="customer-email">{{ order.customer_email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ order.created_at.strftime('%d %b %Y') }}</td>
+                    <td>{{ order.items|length }} items</td>
+                    <td class="order-total">₹{{ order.total }}</td>
+                    <td>
+                        <span class="payment-method">{{ order.payment_method|upper }}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge {{ order.status }}">{{ order.status|title }}</span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="{{ url_for('order_confirmed', order_id=order.id) }}" class="action-btn view" title="View Order">
+                                <i class="fa-regular fa-eye"></i>
+                            </a>
+                            <button class="action-btn edit" onclick="editOrder({{ order.id }})" title="Edit Order">
+                                <i class="fa-regular fa-pen-to-square"></i>
+                            </button>
+                            <button class="action-btn status" onclick="updateStatus({{ order.id }})" title="Update Status">
+                                <i class="fa-regular fa-clock"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination">
+        <button class="page-btn" disabled><i class="fa-solid fa-chevron-left"></i></button>
+        <span class="page-info">Page 1 of 1</span>
+        <button class="page-btn" disabled><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+</div>
+
+<!-- Update Status Modal -->
+<div id="statusModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Update Order Status</h3>
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <select id="newStatus" class="status-select">
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+            <textarea id="statusNote" placeholder="Add notes (optional)" rows="3"></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+            <button class="save-btn" onclick="saveStatus()">Update Status</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentOrderId = null;
+
+function filterOrders() {
+    const status = document.getElementById('statusFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('.order-row');
+    const today = new Date().toISOString().split('T')[0];
+    
+    rows.forEach(row => {
+        let show = true;
+        const rowStatus = row.dataset.status;
+        const rowDate = row.dataset.date;
+        const rowText = row.textContent.toLowerCase();
+        
+        // Status filter
+        if (status !== 'all' && rowStatus !== status) {
+            show = false;
+        }
+        
+        // Date filter
+        if (show && dateFilter !== 'all') {
+            const date = new Date(rowDate);
+            const now = new Date();
+            
+            if (dateFilter === 'today' && rowDate !== today) {
+                show = false;
+            } else if (dateFilter === 'week') {
+                const weekAgo = new Date(now.setDate(now.getDate() - 7));
+                if (date < weekAgo) show = false;
+            } else if (dateFilter === 'month') {
+                const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
+                if (date < monthAgo) show = false;
+            } else if (dateFilter === 'year') {
+                const yearAgo = new Date(now.setFullYear(now.getFullYear() - 1));
+                if (date < yearAgo) show = false;
+            }
+        }
+        
+        // Search filter
+        if (show && searchTerm && !rowText.includes(searchTerm)) {
+            show = false;
+        }
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function updateStatus(orderId) {
+    currentOrderId = orderId;
+    document.getElementById('statusModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('statusModal').style.display = 'none';
+    currentOrderId = null;
+}
+
+function saveStatus() {
+    const newStatus = document.getElementById('newStatus').value;
+    const note = document.getElementById('statusNote').value;
+    
+    fetch(`/admin/update-order/${currentOrderId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus, note: note })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error updating status');
+        }
+    });
+}
+
+function editOrder(orderId) {
+    window.location.href = `/admin/order/edit/${orderId}`;
+}
+
+function exportOrders() {
+    // Implement export functionality
+    alert('Export feature coming soon!');
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('statusModal');
+    if (event.target === modal) {
+        closeModal();
+    }
+}
+</script>
+
+<style>
+/* ========== MANAGE ORDERS PAGE ========== */
+
+.orders-page {
+    max-width: 1400px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+/* Header */
+.orders-header {
+    background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+    padding: 30px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.orders-header h1 {
+    color: white;
+    font-size: 32px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.orders-header h1 i {
+    font-size: 36px;
+}
+
+.btn-back {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    padding: 10px 20px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateX(-5px);
+}
+
+/* Order Stats */
+.order-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.15);
+}
+
+.stat-card.cancelled:hover {
+    box-shadow: 0 8px 25px rgba(220, 53, 69, 0.15);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #ff6b6b20, #ff8e5320);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #ff6b6b;
+}
+
+.stat-card.cancelled .stat-icon {
+    color: #dc3545;
+    background: #dc354520;
+}
+
+.stat-info h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 3px;
+}
+
+.stat-info p {
+    color: #666;
+    font-size: 13px;
+    margin: 0;
+}
+
+/* Filters Bar */
+.filters-bar {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 180px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-group select,
+.filter-group input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+    border-color: #ff6b6b;
+    outline: none;
+    box-shadow: 0 5px 15px rgba(255, 107, 107, 0.1);
+}
+
+.export-btn {
+    padding: 10px 25px;
+    background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 42px;
+}
+
+.export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+}
+
+/* Table Container */
+.table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    overflow: auto;
+    margin-bottom: 30px;
+}
+
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1000px;
+}
+
+.orders-table th {
+    background: #f8fafc;
+    padding: 18px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.orders-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+
+.order-number {
+    font-weight: 600;
+    color: #ff6b6b;
+    font-size: 14px;
+}
+
+/* Customer Info */
+.customer-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.customer-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.customer-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+    margin-bottom: 3px;
+}
+
+.customer-email {
+    color: #666;
+    font-size: 12px;
+}
+
+.order-total {
+    font-weight: 700;
+    color: #28a745;
+    font-size: 16px;
+}
+
+/* Payment Method */
+.payment-method {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.processing {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.status-badge.shipped {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.status-badge.delivered {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.cancelled {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    background: transparent;
+}
+
+.action-btn.view {
+    color: #2196f3;
+    background: #2196f310;
+}
+
+.action-btn.edit {
+    color: #ff9800;
+    background: #ff980010;
+}
+
+.action-btn.status {
+    color: #4caf50;
+    background: #4caf5010;
+}
+
+.action-btn.view:hover {
+    background: #2196f3;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.action-btn.edit:hover {
+    background: #ff9800;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.action-btn.status:hover {
+    background: #4caf50;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.page-btn {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.page-btn:hover:not(:disabled) {
+    background: #ff6b6b;
+    color: white;
+    border-color: #ff6b6b;
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-info {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.close-modal {
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    transition: color 0.3s ease;
+}
+
+.close-modal:hover {
+    color: #333;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.status-select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.status-select:focus {
+    border-color: #ff6b6b;
+    outline: none;
+}
+
+.modal-body textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.modal-body textarea:focus {
+    border-color: #ff6b6b;
+    outline: none;
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.cancel-btn {
+    padding: 10px 20px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+    background: #f8f9fa;
+}
+
+.save-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .order-stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .orders-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .order-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .filters-bar {
+        flex-direction: column;
+    }
+    
+    .filter-group {
+        width: 100%;
+    }
+    
+    .export-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .order-stats {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

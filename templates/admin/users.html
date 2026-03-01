@@ -1,0 +1,500 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - Admin{% endblock %}
+
+{% block content %}
+<div class="users-page">  <!-- Changed from admin-container to users-page -->
+    <!-- Header -->
+    <div class="users-header">
+        <h1>
+            <i class="fa-solid fa-users"></i> 
+            Manage Users
+        </h1>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Back to Dashboard</a>
+    </div>
+    
+    <!-- User Stats -->
+    <div class="user-stats">
+        <div class="user-stat-card">
+            <div class="user-stat-icon">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="user-stat-info">
+                <h3>{{ users|length }}</h3>
+                <p>Total Users</p>
+            </div>
+        </div>
+        <div class="user-stat-card">
+            <div class="user-stat-icon">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <div class="user-stat-info">
+                <h3>{{ users|selectattr('role', 'equalto', 'admin')|list|length }}</h3>
+                <p>Admins</p>
+            </div>
+        </div>
+        <div class="user-stat-card">
+            <div class="user-stat-icon">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="user-stat-info">
+                <h3>{{ users|selectattr('role', 'equalto', 'user')|list|length }}</h3>
+                <p>Regular Users</p>
+            </div>
+        </div>
+        <div class="user-stat-card">
+            <div class="user-stat-icon">
+                <i class="fa-solid fa-cart-shopping"></i>
+            </div>
+            <div class="user-stat-info">
+                <h3>{{ orders_count|default(0) }}</h3>
+                <p>Total Orders</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search Bar -->
+    <div class="user-search">
+        <input type="text" id="userSearch" placeholder="Search users by name or email...">
+        <button onclick="searchUsers()">
+            <i class="fa-solid fa-search"></i> Search
+        </button>
+    </div>
+    
+    <!-- Users Grid -->
+    <div class="users-grid" id="usersGrid">
+        {% for user in users %}
+        <div class="user-card" data-name="{{ user.name.lower() }}" data-email="{{ user.email.lower() }}">
+            <div class="user-avatar">
+                {{ user.name[0]|upper }}
+            </div>
+            <div class="user-info">
+                <h3>{{ user.name }}</h3>
+                <p class="user-email">
+                    <i class="fa-regular fa-envelope"></i> {{ user.email }}
+                </p>
+                <span class="user-badge {{ user.role }}">{{ user.role|upper }}</span>
+                
+                <div class="user-meta">
+                    <div class="meta-item">
+                        <i class="fa-regular fa-calendar"></i>
+                        <div class="count">{{ user.created_at.strftime('%d') if user.created_at else 'N/A' }}</div>
+                        <div class="label">{{ user.created_at.strftime('%b %Y') if user.created_at else 'N/A' }}</div>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fa-regular fa-clock"></i>
+                        <div class="count">{{ user.orders|length }}</div>
+                        <div class="label">Orders</div>
+                    </div>
+                </div>
+                
+                <div class="user-actions">
+                    <button class="user-action-btn view" onclick="viewUser({{ user.id }})">
+                        <i class="fa-regular fa-eye"></i> View
+                    </button>
+                    <button class="user-action-btn edit" onclick="editUser({{ user.id }})">
+                        <i class="fa-regular fa-pen-to-square"></i> Edit
+                    </button>
+                    {% if user.role != 'admin' or current_user.id != user.id %}
+                    <button class="user-action-btn block" onclick="toggleUserStatus({{ user.id }})">
+                        <i class="fa-regular fa-circle-xmark"></i> Block
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function searchUsers() {
+    const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+    const userCards = document.querySelectorAll('.user-card');
+    
+    userCards.forEach(card => {
+        const name = card.dataset.name;
+        const email = card.dataset.email;
+        
+        if (name.includes(searchTerm) || email.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function viewUser(userId) {
+    window.location.href = `/admin/user/${userId}`;
+}
+
+function editUser(userId) {
+    window.location.href = `/admin/user/edit/${userId}`;
+}
+
+function toggleUserStatus(userId) {
+    if (confirm('Are you sure you want to block this user?')) {
+        fetch(`/admin/user/toggle-status/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error updating user status');
+            }
+        });
+    }
+}
+</script>
+
+<style>
+/* ========== MANAGE USERS PAGE ========== */
+
+.users-page {
+    max-width: 1400px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+/* Header */
+.users-header {
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    padding: 30px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.users-header h1 {
+    color: white;
+    font-size: 32px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.users-header h1 i {
+    font-size: 36px;
+}
+
+.btn-back {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    padding: 10px 20px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateX(-5px);
+}
+
+/* User Stats */
+.user-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.user-stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: all 0.3s ease;
+}
+
+.user-stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(79, 172, 254, 0.15);
+}
+
+.user-stat-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #4facfe20, #00f2fe20);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #4facfe;
+}
+
+.user-stat-info h3 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.user-stat-info p {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Search Bar */
+.user-search {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    display: flex;
+    gap: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.user-search input {
+    flex: 1;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+.user-search input:focus {
+    border-color: #4facfe;
+    outline: none;
+    box-shadow: 0 5px 15px rgba(79, 172, 254, 0.1);
+}
+
+.user-search button {
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-search button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+}
+
+/* Users Grid */
+.users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.user-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.user-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.user-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(135deg, #4facfe20, #00f2fe20);
+}
+
+.user-avatar {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 30px auto 15px;
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 40px;
+    font-weight: 700;
+    border: 4px solid white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.user-info {
+    text-align: center;
+    padding: 20px;
+}
+
+.user-info h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.user-info .user-email {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.user-badge {
+    display: inline-block;
+    padding: 6px 15px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.user-badge.admin {
+    background: #dc3545;
+    color: white;
+}
+
+.user-badge.user {
+    background: #28a745;
+    color: white;
+}
+
+.user-meta {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px 0;
+    padding: 15px 0;
+    border-top: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.meta-item {
+    text-align: center;
+}
+
+.meta-item i {
+    font-size: 20px;
+    color: #4facfe;
+    margin-bottom: 5px;
+}
+
+.meta-item .count {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+}
+
+.meta-item .label {
+    font-size: 11px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.user-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.user-action-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.user-action-btn.view {
+    background: #4facfe20;
+    color: #4facfe;
+}
+
+.user-action-btn.view:hover {
+    background: #4facfe;
+    color: white;
+}
+
+.user-action-btn.edit {
+    background: #28a74520;
+    color: #28a745;
+}
+
+.user-action-btn.edit:hover {
+    background: #28a745;
+    color: white;
+}
+
+.user-action-btn.block {
+    background: #dc354520;
+    color: #dc3545;
+}
+
+.user-action-btn.block:hover {
+    background: #dc3545;
+    color: white;
+}
+
+@media (max-width: 1024px) {
+    .user-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .users-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .users-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .user-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .user-search {
+        flex-direction: column;
+    }
+    
+    .user-actions {
+        flex-wrap: wrap;
+    }
+}
+</style>
+{% endblock %}

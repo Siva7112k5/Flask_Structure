@@ -34,6 +34,143 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# Add this with your other configurations
+@app.context_processor
+def inject_now():
+    from datetime import datetime
+    return {'now': datetime.now()}
+
+ #   this is the starting point to arrange the backend code 
+
+#Home router
+
+@app.route('/')
+def home():
+    # Get latest 5 products (newest first)
+    latest_products = Product.query.order_by(Product.created_at.desc()).limit(5).all()
+    
+    # Get best seller products (highest rated)
+    best_seller_products = Product.query.order_by(Product.rating.desc()).limit(5).all()
+    
+    # Total products count
+    total_products = Product.query.count()
+    
+    categories = ['Appliances', 'Home & Kitchen', 'Fashion', 'Sports', 'Beauty', 'Toys', 'Books', 'Furniture', 
+                  'Bags', 'Mobiles', 'Laptop', 'Watch', 'Men Dresses', 'Woman Dresses', 'Decorations', 
+                  'Pets care', 'Bathing products', 'Skin care', 'Face care', 'Shoes', 'Mens Accesories', 
+                  'Women Accesories', 'Gifts', 'Hair care']
+    
+    return render_template('index.html', 
+                         featured_products=latest_products,  # Keep for backward compatibility
+                         latest_products=latest_products,
+                         best_seller_products=best_seller_products,
+                         total_products=total_products,
+                         categories=categories)
+
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+
+
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+    if request.method == 'POST':
+        flash('Thank you for contacting us! We will get back to you soon.', 'success')
+        return redirect(url_for('contact'))
+    return render_template('contact.html')
+
+from sqlalchemy import func
+
+from sqlalchemy import func
+
+# At the top of app.py, add these imports
+from utils.smart_search import SmartSearch, SearchHistory
+from functools import lru_cache
+import time
+
+# Initialize search history (can be stored in database later)
+search_history = SearchHistory()
+
+@app.route('/search')
+def search():
+    """
+    Enhanced smart search route
+    """
+    query = request.args.get('q', '').strip()
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    
+    start_time = time.time()
+    
+    if not query:
+        # Show popular searches if no query
+        popular = search_history.get_popular_searches(10)
+        return render_template('search_results.html', 
+                             products=[],
+                             query='',
+                             popular_searches=popular,
+                             search_time=0)
+    
+    # Get all products (you might want to cache this)
+    products = Product.query.all()
+    
+    # Create smart search instance
+    smart_search = SmartSearch(products)
+    
+    # Perform smart search
+    results = smart_search.search(query)
+    
+    # Log the search
+    search_history.log_search(query, len(results))
+    
+    # Check if we should suggest spelling correction
+    if len(results) == 0:
+        corrected = smart_search.suggest_corrections(query)
+        if corrected and corrected != query:
+            flash(f'Did you mean: "{corrected}"?', 'info')
+    
+    # Get related searches
+    related = search_history.get_related_searches(query)
+    
+    # Extract just the products from results
+    products_found = [r[0] for r in results]
+    
+    # Calculate search time
+    search_time = round((time.time() - start_time) * 1000, 2)  # in milliseconds
+    
+    # Paginate results
+    total = len(products_found)
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_products = products_found[start:end]
+    
+    return render_template('search_results.html',
+                         products=paginated_products,
+                         query=query,
+                         total_results=total,
+                         page=page,
+                         per_page=per_page,
+                         search_time=search_time,
+                         related_searches=related)
+
+
+@app.route('/search/click', methods=['POST'])
+def track_search_click():
+    """
+    Track when users click on search results
+    This helps improve search relevance over time
+    """
+    data = request.get_json()
+    query = data.get('query')
+    product_id = data.get('product_id')
+    
+    if query and product_id:
+        search_history.log_click(query, product_id)
+        return jsonify({'success': True})
+    return jsonify({'success': False}), 400
+
 # Admin required decorator
 def admin_required(f):
     @wraps(f)
@@ -58,28 +195,216 @@ def cart_count():
 def generate_order_number():
     return 'ORD' + ''.join(random.choices(string.digits, k=8))
 
-@app.route('/')
-def home():
-    # Get latest 5 products (newest first)
-    latest_products = Product.query.order_by(Product.created_at.desc()).limit(5).all()
+from flask_socketio import SocketIO, emit, join_room, leave_room
+import uuid
+
+# Initialize SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Store active chats (in production, use Redis)
+active_chats = {}
+chat_messages = {}
+support_agents = set()
+
+class ChatMessage:
+    def __init__(self, sender, message, timestamp):
+        self.sender = sender
+        self.message = message
+        self.timestamp = timestamp
+
+@socketio.on('connect')
+def handle_connect():
+    print(f'Client connected: {request.sid}')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print(f'Client disconnected: {request.sid}')
+    # Remove from active chats
+    for chat_id, data in list(active_chats.items()):
+        if data['user_sid'] == request.sid or data.get('agent_sid') == request.sid:
+            # Notify other party
+            if data['user_sid'] == request.sid:
+                # User disconnected
+                if data.get('agent_sid'):
+                    emit('chat_ended', {'message': 'User has left the chat'}, room=data['agent_sid'])
+            else:
+                # Agent disconnected
+                emit('chat_ended', {'message': 'Support agent has left the chat'}, room=data['user_sid'])
+            del active_chats[chat_id]
+            break
+
+@socketio.on('start_chat')
+def handle_start_chat(data):
+    user_id = current_user.id if current_user.is_authenticated else f"guest_{uuid.uuid4().hex[:8]}"
+    user_name = current_user.name if current_user.is_authenticated else data.get('name', 'Guest')
+    user_email = current_user.email if current_user.is_authenticated else data.get('email', '')
     
-    # Get best seller products (highest rated)
-    best_seller_products = Product.query.order_by(Product.rating.desc()).limit(5).all()
+    chat_id = str(uuid.uuid4())[:8]
     
-    # Total products count
-    total_products = Product.query.count()
+    active_chats[chat_id] = {
+        'id': chat_id,
+        'user_id': user_id,
+        'user_name': user_name,
+        'user_email': user_email,
+        'user_sid': request.sid,
+        'agent_sid': None,
+        'status': 'waiting',
+        'start_time': datetime.utcnow(),
+        'messages': []
+    }
     
-    categories = ['Appliances', 'Home & Kitchen', 'Fashion', 'Sports', 'Beauty', 'Toys', 'Books', 'Furniture', 
-                  'Bags', 'Mobiles', 'Laptop', 'Watch', 'Men Dresses', 'Woman Dresses', 'Decorations', 
-                  'Pets care', 'Bathing products', 'Skin care', 'Face care', 'Shoes', 'Mens Accesories', 
-                  'Women Accesories', 'Gifts', 'Hair care']
+    join_room(chat_id)
     
-    return render_template('index.html', 
-                         featured_products=latest_products,  # Keep for backward compatibility
-                         latest_products=latest_products,
-                         best_seller_products=best_seller_products,
-                         total_products=total_products,
-                         categories=categories)
+    # Notify user
+    emit('chat_started', {
+        'chat_id': chat_id,
+        'message': 'Connecting you to a support agent...'
+    })
+    
+    # If no agents online, show offline message
+    if len(support_agents) == 0:
+        emit('agent_offline', {
+            'message': 'No agents are online right now. Please leave a message.',
+            'email': 'support@triowise.com'
+        })
+
+@socketio.on('agent_join')
+def handle_agent_join(data):
+    agent_name = data.get('name', 'Support Agent')
+    support_agents.add(request.sid)
+    
+    # Check for waiting chats
+    waiting_chats = [c for c in active_chats.values() if c['status'] == 'waiting']
+    
+    emit('agent_joined', {
+        'waiting_chats': len(waiting_chats),
+        'agent_name': agent_name
+    })
+
+@socketio.on('agent_assign')
+def handle_agent_assign(data):
+    chat_id = data.get('chat_id')
+    agent_name = data.get('agent_name', 'Support Agent')
+    
+    if chat_id in active_chats:
+        active_chats[chat_id]['agent_sid'] = request.sid
+        active_chats[chat_id]['status'] = 'active'
+        active_chats[chat_id]['agent_name'] = agent_name
+        
+        join_room(chat_id)
+        
+        # Notify user
+        emit('agent_assigned', {
+            'agent_name': agent_name,
+            'message': f'You are now connected with {agent_name}'
+        }, room=active_chats[chat_id]['user_sid'])
+        
+        # Send chat history
+        if active_chats[chat_id]['messages']:
+            emit('chat_history', {
+                'messages': active_chats[chat_id]['messages']
+            }, room=request.sid)
+
+@socketio.on('send_message')
+def handle_send_message(data):
+    chat_id = data.get('chat_id')
+    message = data.get('message')
+    sender = data.get('sender', 'user')  # 'user' or 'agent'
+    
+    if chat_id in active_chats:
+        chat_data = active_chats[chat_id]
+        
+        msg = {
+            'sender': sender,
+            'message': message,
+            'timestamp': datetime.utcnow().strftime('%H:%M'),
+            'sender_name': chat_data['user_name'] if sender == 'user' else chat_data.get('agent_name', 'Support')
+        }
+        
+        chat_data['messages'].append(msg)
+        
+        # Broadcast to room
+        emit('new_message', msg, room=chat_id)
+        
+        # If agent not assigned, store as offline message
+        if not chat_data['agent_sid'] and sender == 'user':
+            # Store in database for later follow-up
+            store_offline_message(chat_data, message)
+
+@socketio.on('typing')
+def handle_typing(data):
+    chat_id = data.get('chat_id')
+    is_typing = data.get('is_typing', False)
+    
+    if chat_id in active_chats:
+        emit('user_typing', {'is_typing': is_typing}, 
+             room=active_chats[chat_id].get('agent_sid') if active_chats[chat_id].get('agent_sid') else None)
+
+@socketio.on('end_chat')
+def handle_end_chat(data):
+    chat_id = data.get('chat_id')
+    
+    if chat_id in active_chats:
+        emit('chat_ended', {'message': 'Chat has ended'}, room=chat_id)
+        
+        # Save chat transcript
+        save_chat_transcript(active_chats[chat_id])
+        
+        # Clean up
+        leave_room(chat_id)
+        del active_chats[chat_id]
+
+def store_offline_message(chat_data, message):
+    """Store offline message in database"""
+    class OfflineMessage(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        chat_id = db.Column(db.String(20))
+        user_name = db.Column(db.String(100))
+        user_email = db.Column(db.String(120))
+        message = db.Column(db.Text)
+        created_at = db.Column(db.DateTime, default=datetime.utcnow)
+        status = db.Column(db.String(20), default='pending')
+    
+    offline_msg = OfflineMessage(
+        chat_id=chat_data['id'],
+        user_name=chat_data['user_name'],
+        user_email=chat_data['user_email'],
+        message=message
+    )
+    db.session.add(offline_msg)
+    db.session.commit()
+    
+    # Send email notification to support
+    send_offline_message_notification(offline_msg)
+
+def save_chat_transcript(chat_data):
+    """Save chat transcript to database"""
+    class ChatTranscript(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        chat_id = db.Column(db.String(20))
+        user_id = db.Column(db.String(100))
+        user_name = db.Column(db.String(100))
+        user_email = db.Column(db.String(120))
+        agent_name = db.Column(db.String(100))
+        messages = db.Column(db.Text)  # JSON string
+        start_time = db.Column(db.DateTime)
+        end_time = db.Column(db.DateTime, default=datetime.utcnow)
+        rating = db.Column(db.Integer, nullable=True)
+        feedback = db.Column(db.Text, nullable=True)
+    
+    transcript = ChatTranscript(
+        chat_id=chat_data['id'],
+        user_id=chat_data['user_id'],
+        user_name=chat_data['user_name'],
+        user_email=chat_data['user_email'],
+        agent_name=chat_data.get('agent_name', ''),
+        messages=json.dumps(chat_data['messages']),
+        start_time=chat_data['start_time']
+    )
+    db.session.add(transcript)
+    db.session.commit()
+
+
 @app.route('/products')
 def all_products():
     # Define categories
@@ -228,107 +553,8 @@ def wishlist():
     
     return render_template('wishlist.html', products=products)
 
-@app.route('/about')
-def about():
-    return render_template('about.html')
 
 
-
-@app.route('/contact', methods=['GET', 'POST'])
-def contact():
-    if request.method == 'POST':
-        flash('Thank you for contacting us! We will get back to you soon.', 'success')
-        return redirect(url_for('contact'))
-    return render_template('contact.html')
-
-from sqlalchemy import func
-
-from sqlalchemy import func
-
-# At the top of app.py, add these imports
-from utils.smart_search import SmartSearch, SearchHistory
-from functools import lru_cache
-import time
-
-# Initialize search history (can be stored in database later)
-search_history = SearchHistory()
-
-@app.route('/search')
-def search():
-    """
-    Enhanced smart search route
-    """
-    query = request.args.get('q', '').strip()
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
-    
-    start_time = time.time()
-    
-    if not query:
-        # Show popular searches if no query
-        popular = search_history.get_popular_searches(10)
-        return render_template('search_results.html', 
-                             products=[],
-                             query='',
-                             popular_searches=popular,
-                             search_time=0)
-    
-    # Get all products (you might want to cache this)
-    products = Product.query.all()
-    
-    # Create smart search instance
-    smart_search = SmartSearch(products)
-    
-    # Perform smart search
-    results = smart_search.search(query)
-    
-    # Log the search
-    search_history.log_search(query, len(results))
-    
-    # Check if we should suggest spelling correction
-    if len(results) == 0:
-        corrected = smart_search.suggest_corrections(query)
-        if corrected and corrected != query:
-            flash(f'Did you mean: "{corrected}"?', 'info')
-    
-    # Get related searches
-    related = search_history.get_related_searches(query)
-    
-    # Extract just the products from results
-    products_found = [r[0] for r in results]
-    
-    # Calculate search time
-    search_time = round((time.time() - start_time) * 1000, 2)  # in milliseconds
-    
-    # Paginate results
-    total = len(products_found)
-    start = (page - 1) * per_page
-    end = start + per_page
-    paginated_products = products_found[start:end]
-    
-    return render_template('search_results.html',
-                         products=paginated_products,
-                         query=query,
-                         total_results=total,
-                         page=page,
-                         per_page=per_page,
-                         search_time=search_time,
-                         related_searches=related)
-
-@app.route('/search/click', methods=['POST'])
-def track_search_click():
-    """
-    Track when users click on search results
-    This helps improve search relevance over time
-    """
-    data = request.get_json()
-    query = data.get('query')
-    product_id = data.get('product_id')
-    
-    if query and product_id:
-        search_history.log_click(query, product_id)
-        return jsonify({'success': True})
-    return jsonify({'success': False}), 400
 
 @app.route('/add-to-cart/<int:product_id>', methods=['POST'])
 def add_to_cart(product_id):
@@ -564,6 +790,136 @@ def admin_dashboard():
     users = User.query.all()
     products = Product.query.all()
     return render_template('admin/dashboard.html', orders=orders, users=users, products=products)
+
+# ========== ADMIN ROUTES - ADD THESE RIGHT AFTER YOUR EXISTING ADMIN ROUTES ==========
+
+@app.route('/admin/products')
+@login_required
+@admin_required
+def admin_products():
+    products = Product.query.order_by(Product.created_at.desc()).all()
+    return render_template('admin/products.html', products=products)
+
+@app.route('/admin/product/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_add_product():
+    if request.method == 'POST':
+        # Get form data
+        name = request.form.get('name')
+        price = request.form.get('price')
+        category = request.form.get('category')
+        description = request.form.get('description')
+        short_description = request.form.get('short_description', description[:100] if description else '')
+        image = request.form.get('image', 'images/placeholder.jpg')
+        brand = request.form.get('brand', 'Generic')
+        stock = request.form.get('stock', 10)
+        
+        # Create new product
+        product = Product(
+            name=name,
+            price=float(price) if price else 0,
+            compare_price=float(request.form.get('compare_price', 0)) if request.form.get('compare_price') else None,
+            discount=int(request.form.get('discount', 0)) if request.form.get('discount') else 0,
+            category=category,
+            description=description,
+            short_description=short_description,
+            image=image,
+            brand=brand,
+            stock=int(stock) if stock else 10,
+            rating=4.5,
+            reviews_count=0,
+            featured=False
+        )
+        
+        db.session.add(product)
+        db.session.commit()
+        flash('Product added successfully!', 'success')
+        return redirect(url_for('admin_products'))
+    
+    categories = ['Appliances', 'Home & Kitchen', 'Fashion', 'Sports', 'Beauty', 'Toys', 'Books', 
+                  'Furniture', 'Bags', 'Mobiles', 'Laptop', 'Watch', 'Men Dresses', 'Woman Dresses', 
+                  'Decorations', 'Pets care', 'Bathing products', 'Skin care', 'Face care', 'Shoes', 
+                  'Mens Accesories', 'Women Accesories', 'Gifts', 'Hair care']
+    
+    brands = ['Apple', 'Samsung', 'OnePlus', 'Google', 'Xiaomi', 'Nike', 'Adidas', 'Puma', 
+              'Levi\'s', 'H&M', 'Zara', 'Arrow', 'US Polo', 'Raymond', 'Woodland']
+    
+    return render_template('admin/add_product.html', categories=categories, brands=brands)    
+
+@app.route('/admin/orders')
+@login_required
+@admin_required
+def admin_orders():
+    orders = Order.query.order_by(Order.created_at.desc()).all()
+    return render_template('admin/orders.html', orders=orders)
+
+@app.route('/admin/users')
+@login_required
+@admin_required
+def admin_users():
+    users = User.query.order_by(User.created_at.desc()).all()
+    return render_template('admin/users.html', users=users)
+
+@app.route('/admin/chats')
+@login_required
+@admin_required
+def admin_chats():
+    return render_template('admin/chats.html')
+
+
+
+
+# ========== ADMIN PRODUCT EDIT ROUTE ==========
+# Make sure you have ONLY ONE of these!
+
+@app.context_processor
+def inject_now():
+    from datetime import datetime
+    return {'now': datetime.now()}
+
+@app.route('/admin/product/edit/<int:product_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_edit_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    
+    if request.method == 'POST':
+        # Update product with form data
+        product.name = request.form.get('name', product.name)
+        product.price = float(request.form.get('price')) if request.form.get('price') else product.price
+        product.compare_price = float(request.form.get('compare_price')) if request.form.get('compare_price') else None
+        product.discount = int(request.form.get('discount')) if request.form.get('discount') else 0
+        product.category = request.form.get('category', product.category)
+        product.brand = request.form.get('brand', product.brand)
+        product.stock = int(request.form.get('stock')) if request.form.get('stock') else product.stock
+        product.description = request.form.get('description', product.description)
+        product.short_description = request.form.get('short_description', product.short_description)
+        product.image = request.form.get('image', product.image)
+        
+        db.session.commit()
+        flash('Product updated successfully!', 'success')
+        return redirect(url_for('admin_products'))
+    
+    categories = ['Appliances', 'Home & Kitchen', 'Fashion', 'Sports', 'Beauty', 'Toys', 'Books', 
+                  'Furniture', 'Bags', 'Mobiles', 'Laptop', 'Watch', 'Men Dresses', 'Woman Dresses', 
+                  'Decorations', 'Pets care', 'Bathing products', 'Skin care', 'Face care', 'Shoes', 
+                  'Mens Accesories', 'Women Accesories', 'Gifts', 'Hair care']
+    
+    brands = ['Apple', 'Samsung', 'OnePlus', 'Google', 'Xiaomi', 'Nike', 'Adidas', 'Puma', 
+              'Levi\'s', 'H&M', 'Zara', 'Arrow', 'US Polo', 'Raymond', 'Woodland']
+    
+    return render_template('admin/edit_product.html', product=product, categories=categories, brands=brands)
+
+@app.route('/admin/product/delete/<int:product_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    db.session.delete(product)
+    db.session.commit()
+    flash('Product deleted successfully!', 'success')
+    return redirect(url_for('admin_products'))
 
 @app.route('/api/product/<int:product_id>')
 def api_product_detail(product_id):
@@ -1821,6 +2177,7 @@ with app.app_context():
         print("✅ Sample products created!")
     else:
         print(f"📊 Database already has {Product.query.count()} products")
+
 
     
 from textblob import TextBlob
