@@ -1,28 +1,453 @@
 {% extends "base.html" %}
+
 {% block title %}Login - Triowise{% endblock %}
+
 {% block content %}
 <div class="auth-container">
     <div class="auth-box">
-        <h2>Login to Triowise</h2>
-        <form method="POST">
+        <!-- Header with gradient -->
+        <div class="auth-header">
+            <h2>Welcome Back!</h2>
+            <p>Sign in to continue shopping</p>
+        </div>
+        
+        <form method="POST" class="auth-form">
             {{ form.hidden_tag() }}
-            <div class="form-group">
-                {{ form.email.label }}
-                {{ form.email(class="form-control", placeholder="Enter email") }}
+            
+            <!-- Email field with icon -->
+            <div class="auth-input-group">
+                <i class="fa-regular fa-envelope input-icon"></i>
+                {{ form.email(class="auth-input", placeholder="Enter your email") }}
                 {% for error in form.email.errors %}
-                    <span class="error">{{ error }}</span>
+                    <span class="auth-error">{{ error }}</span>
                 {% endfor %}
             </div>
-            <div class="form-group">
-                {{ form.password.label }}
-                {{ form.password(class="form-control", placeholder="Enter password") }}
+            
+            <!-- Password field with icon -->
+            <div class="auth-input-group">
+                <i class="fa-regular fa-lock input-icon"></i>
+                {{ form.password(class="auth-input", placeholder="Enter your password") }}
                 {% for error in form.password.errors %}
-                    <span class="error">{{ error }}</span>
+                    <span class="auth-error">{{ error }}</span>
                 {% endfor %}
             </div>
-            <button type="submit" class="btn-primary">{{ form.submit.label }}</button>
+            
+            <!-- Remember me & Forgot password -->
+            <div class="auth-options">
+                <label class="auth-checkbox">
+                    <input type="checkbox" name="remember"> 
+                    <span>Remember me</span>
+                </label>
+                <a href="#" class="auth-forgot">Forgot password?</a>
+            </div>
+            
+            <!-- Submit button -->
+            <button type="submit" class="auth-submit">
+                <i class="fa-regular fa-arrow-right-to-bracket"></i>
+                {{ form.submit.label }}
+            </button>
         </form>
-        <p class="auth-link">Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+        
+        <!-- Divider -->
+        <div class="auth-divider">
+            <span>or continue with</span>
+        </div>
+        
+        <!-- Social login -->
+        <div class="auth-social">
+            <button class="auth-social-btn google">
+                <i class="fa-brands fa-google"></i> Google
+            </button>
+            <button class="auth-social-btn facebook">
+                <i class="fa-brands fa-facebook-f"></i> Facebook
+            </button>
+        </div>
+        
+        <!-- Register link -->
+        <p class="auth-footer">
+            Don't have an account? 
+            <a href="{{ url_for('register') }}" class="auth-link">Sign up</a>
+        </p>
+        
+        <!-- Guest option -->
+        <p class="auth-guest" onclick="window.location.href='{{ url_for('home') }}'">
+            Continue as guest <i class="fa-regular fa-arrow-right"></i>
+        </p>
     </div>
 </div>
+
+<style>
+/* ========== AUTH PAGE STYLES (Popup Style) ========== */
+
+.auth-container {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea10, #764ba210);
+}
+
+.auth-box {
+    max-width: 420px;
+    width: 100%;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    padding: 35px 30px;
+    animation: slideUp 0.5s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header */
+.auth-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.auth-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+}
+
+.auth-header p {
+    color: #666;
+    font-size: 15px;
+}
+
+/* Form */
+.auth-form {
+    margin-bottom: 20px;
+}
+
+/* Input Groups */
+.auth-input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.input-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #667eea;
+    font-size: 16px;
+    z-index: 1;
+}
+
+.auth-input {
+    width: 100%;
+    padding: 14px 15px 14px 45px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: #f8fafc;
+}
+
+.auth-input:focus {
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+    outline: none;
+}
+
+.auth-input::placeholder {
+    color: #999;
+    font-size: 13px;
+}
+
+/* Error messages */
+.auth-error {
+    display: block;
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 5px;
+    padding-left: 15px;
+}
+
+/* Options row */
+.auth-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 15px 0 25px;
+    font-size: 14px;
+}
+
+.auth-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    cursor: pointer;
+}
+
+.auth-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.auth-forgot {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.auth-forgot:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+/* Submit button */
+.auth-submit {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-submit::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.auth-submit:hover::before {
+    left: 100%;
+}
+
+.auth-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.auth-submit i {
+    font-size: 18px;
+    transition: transform 0.3s ease;
+}
+
+.auth-submit:hover i {
+    transform: translateX(5px);
+}
+
+/* Divider */
+.auth-divider {
+    text-align: center;
+    margin: 25px 0 20px;
+    position: relative;
+}
+
+.auth-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e0e0e0;
+    z-index: 1;
+}
+
+.auth-divider span {
+    background: white;
+    padding: 0 15px;
+    color: #666;
+    font-size: 13px;
+    position: relative;
+    z-index: 2;
+}
+
+/* Social buttons */
+.auth-social {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.auth-social-btn {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    background: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.auth-social-btn.google {
+    color: #ea4335;
+}
+
+.auth-social-btn.google:hover {
+    background: #ea4335;
+    color: white;
+    border-color: #ea4335;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(234, 67, 53, 0.2);
+}
+
+.auth-social-btn.facebook {
+    color: #1877f2;
+}
+
+.auth-social-btn.facebook:hover {
+    background: #1877f2;
+    color: white;
+    border-color: #1877f2;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(24, 119, 242, 0.2);
+}
+
+/* Footer links */
+.auth-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+    color: #666;
+}
+
+.auth-link {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.auth-link:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+/* Guest option */
+.auth-guest {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 13px;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    justify-content: center;
+}
+
+.auth-guest:hover {
+    color: #667eea;
+}
+
+.auth-guest i {
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+.auth-guest:hover i {
+    transform: translateX(5px);
+}
+
+/* Dark mode support */
+[data-theme="dark"] .auth-box {
+    background: #2d2d2d;
+}
+
+[data-theme="dark"] .auth-header p {
+    color: #ccc;
+}
+
+[data-theme="dark"] .auth-input {
+    background: #1a1a1a;
+    border-color: #404040;
+    color: white;
+}
+
+[data-theme="dark"] .auth-input:focus {
+    border-color: #667eea;
+    background: #2d2d2d;
+}
+
+[data-theme="dark"] .auth-divider span {
+    background: #2d2d2d;
+    color: #ccc;
+}
+
+[data-theme="dark"] .auth-social-btn {
+    background: #1a1a1a;
+    border-color: #404040;
+    color: #fff;
+}
+
+[data-theme="dark"] .auth-footer {
+    color: #ccc;
+}
+
+[data-theme="dark"] .auth-guest {
+    color: #666;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .auth-box {
+        padding: 25px 20px;
+    }
+    
+    .auth-header h2 {
+        font-size: 24px;
+    }
+    
+    .auth-options {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .auth-social {
+        flex-direction: column;
+    }
+}
+</style>
 {% endblock %}

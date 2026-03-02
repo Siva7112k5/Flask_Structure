@@ -67,4 +67,162 @@
     </div>
     {% endif %}
 </div>
+<script>
+function toggleWishlist(productId, event) {
+    event.stopPropagation(); // Prevent card click
+    
+    const btn = event.currentTarget;
+    const icon = btn.querySelector('i');
+    const isActive = btn.classList.contains('active');
+    
+    // Determine endpoint based on current state
+    const endpoint = isActive ? 
+        `/api/wishlist/remove/${productId}` : 
+        `/api/wishlist/add/${productId}`;
+    
+    // Show loading state
+    btn.style.pointerEvents = 'none';
+    icon.className = 'fa-solid fa-spinner fa-spin';
+    
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Toggle active state
+            btn.classList.toggle('active');
+            
+            // Update icon
+            if (btn.classList.contains('active')) {
+                icon.className = 'fa-solid fa-heart';
+                showToast('Added to wishlist! ❤️');
+            } else {
+                icon.className = 'fa-regular fa-heart';
+                showToast('Removed from wishlist');
+            }
+            
+            // Update wishlist count in header
+            const countSpan = document.querySelector('.wishlist-count');
+            if (countSpan) {
+                countSpan.textContent = data.wishlist_count + ' items';
+            }
+            
+            // Update navbar badge if exists
+            const navBadge = document.querySelector('.wishlist-count-badge');
+            if (navBadge) {
+                navBadge.textContent = data.wishlist_count;
+                if (data.wishlist_count === 0) {
+                    navBadge.style.display = 'none';
+                } else {
+                    navBadge.style.display = 'flex';
+                }
+            }
+        } else {
+            showToast(data.message || 'Error updating wishlist', 'error');
+            // Revert icon
+            icon.className = isActive ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to update wishlist', 'error');
+        icon.className = isActive ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+    })
+    .finally(() => {
+        btn.style.pointerEvents = 'auto';
+    });
+}
+
+function quickView(productId, event) {
+    event.stopPropagation();
+    // Add your quick view logic here
+    console.log('Quick view for product:', productId);
+}
+
+function addToCart(productId, event) {
+    event.stopPropagation();
+    
+    fetch(`/add-to-cart/${productId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quantity: 1 })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Product added to cart!');
+            document.querySelector('.cart-count').textContent = data.cart_count;
+        } else {
+            showToast('Failed to add to cart', 'error');
+        }
+    });
+}
+
+function showToast(message, type = 'success') {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
+<style>
+    /* Toast Notification */
+.toast-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 8px;
+    color: white;
+    z-index: 9999;
+    animation: slideIn 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.toast-notification.success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.toast-notification.error {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toast-content i {
+    font-size: 20px;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+</style>
 {% endblock %}

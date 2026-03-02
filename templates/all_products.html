@@ -127,7 +127,6 @@
     <i class="fa-regular fa-eye"></i> Quick View
 </button>
 
-<!-- Inside product-card div, before or after quick view button -->
 <button class="wishlist-btn {% if product.id in user_wishlist_ids %}active{% endif %}" 
         onclick="toggleWishlist({{ product.id }}, event)"
         data-product-id="{{ product.id }}">

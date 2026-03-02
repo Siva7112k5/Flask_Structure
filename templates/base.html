@@ -31,66 +31,93 @@
     </a>
 </div>
     <header class="navbar">
-        <div class="logo">
-            <span class="logo-main"><span class="logocolor">Trio</span>wise<span class="logo-badge">plus</span></span>
-        </div>
-
-        <nav class="nav-links">
-          <!-- Hamburger Menu Button (visible only on mobile) -->
-<button class="menu-toggle" id="menuToggle">
-    <i class="fa-solid fa-bars"></i>
-</button>
-
-<nav class="nav-links" id="navLinks">
-    <a href="{{ url_for('home') }}" class="{{ 'active' if request.endpoint == 'home' else '' }}">Home</a>
-    <a href="{{ url_for('all_products') }}" class="{{ 'active' if request.endpoint == 'all_products' else '' }}">Shop</a>
-    <a href="{{ url_for('about') }}" class="{{ 'active' if request.endpoint == 'about' else '' }}">About</a>
-    <a href="{{ url_for('contact') }}" class="{{ 'active' if request.endpoint == 'contact' else '' }}">Contact</a>
-
+    <div class="nav-container">
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleMobileMenu()">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        
+        <!-- Logo -->
+        <a href="{{ url_for('home') }}" class="logo">
+            <span class="logo-main">
+                <span class="logocolor">Trio</span>wise
+            </span>
+            <span class="logo-badge">plus</span>
+        </a>
+        
+        <!-- Desktop Navigation -->
+        <nav class="nav-links desktop-nav">
+            <a href="{{ url_for('home') }}" class="{{ 'active' if request.endpoint == 'home' else '' }}">Home</a>
+            <a href="{{ url_for('all_products') }}" class="{{ 'active' if request.endpoint == 'all_products' else '' }}">Shop</a>
+            <a href="{{ url_for('about') }}" class="{{ 'active' if request.endpoint == 'about' else '' }}">About</a>
+            <a href="{{ url_for('contact') }}" class="{{ 'active' if request.endpoint == 'contact' else '' }}">Contact</a>
         </nav>
-
-
-<form action="{{ url_for('search') }}" method="GET" class="search-container">
-    <button type="submit" style="background:none; border:none; cursor:pointer;">
-        <i class="fa-solid fa-magnifying-glass search-icon"></i>
-    </button>
-    <input type="text" name="q" id="search-input" placeholder="Search products" 
-           value="{{ request.args.get('q', '') }}">
-</form>
-
-<!-- Hidden element to store user authentication status -->
-<span id="user-auth-status" data-authenticated="{% if current_user.is_authenticated %}true{% else %}false{% endif %}" style="display: none;"></span>
-<!-- Add near the cart icon -->
+        
+        <!-- Search Container with Wrapper -->
+        <div class="search-container">
+            <div class="search-wrapper">
+                <form action="{{ url_for('search') }}" method="GET" style="display: flex; width: 100%; position: relative;">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" name="q" id="search-input" placeholder="Search products" 
+                           value="{{ request.args.get('q', '') }}" autocomplete="off">
+                    
+                    <!-- Voice Search Button -->
+                    <button type="button" class="voice-search-btn" id="voiceSearchBtn" onclick="startVoiceSearch()" title="Search by voice">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                    
+                    <!-- Hidden submit button for form submission -->
+                    <button type="submit" style="display: none;"></button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Nav Actions -->
+        <div class="nav-actions">
+            <!-- Theme Toggle -->
+            <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle Dark Mode">
+                <i class="fa-regular fa-moon" id="themeIcon"></i>
+            </button>
+            
+      <!-- Add near the cart icon -->
 <a href="{{ url_for('wishlist') }}" class="wishlist-icon">
     <i class="fa-regular fa-heart"></i>
     {% if current_user.is_authenticated %}
     <span class="wishlist-count-badge">{{ current_user.wishlist_items|length }}</span>
     {% endif %}
 </a>
-
-
-        <div class="nav-actions">
-          <div class="cart-btn" onclick="window.location.href='{{ url_for('cart') }}'">
-    <div class="cart-icon-wrapper">
-        <i class="fa-solid fa-cart-shopping"></i>
-        <span class="cart-count">{{ session.get('cart', [])|length }}</span>
-    </div>
-    <span></span>
-</div>
+            <!-- Cart Button -->
+            <div class="cart-btn" onclick="window.location.href='{{ url_for('cart') }}'">
+                <div class="cart-icon-wrapper">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span class="cart-count">{{ session.get('cart', [])|length }}</span>
+                </div>
+                <span>Cart</span>
+            </div>
+            
+            <!-- Admin Menu (if admin) -->
+            {% if current_user.is_authenticated and current_user.role == 'admin' %}
+            <button class="menu-btn" onclick="openNav()">
+                <i class="fa-solid fa-user-gear"></i>
+            </button>
+            {% endif %}
+            
+            <!-- Login/Logout -->
             {% if current_user.is_authenticated %}
-                <!-- Show logout button and admin menu if admin -->
-              {% if current_user.role == 'admin' %}
-    <button class="menu-btn" onclick="openNav()">
-        <i class="fa-solid fa-user-gear"></i>
-    </button>
-{% endif %}
-                <a href="{{ url_for('logout') }}" class="login-btn logout-btn">Logout</a>
+            <a href="{{ url_for('logout') }}" class="login-btn logout-btn">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </a>
             {% else %}
-                <button class="login-btn" onclick="showLoginPopup()">Login</button>
+            <button class="login-btn" onclick="showLoginPopup()">
+                <i class="fa-solid fa-right-to-bracket"></i> Login
+            </button>
             {% endif %}
         </div>
-    </header>
+    </div>
+</header>
 
+<!-- Hidden element for user authentication status -->
+<span id="user-auth-status" data-authenticated="{% if current_user.is_authenticated %}true{% else %}false{% endif %}" style="display: none;"></span>
     <main>
         {% block content %}{% endblock %}
     </main>
@@ -294,7 +321,20 @@
             </div>
         </div>
     </div>
-</div>    
+</div>   
+
+<!-- Voice Search Popup -->
+<div class="voice-popup" id="voicePopup" style="display: none;">
+    <div class="voice-popup-content">
+        <i class="fa-solid fa-microphone"></i>
+        <h3>Listening...</h3>
+        <p>Speak now to search for products</p>
+        <div class="voice-transcript" id="voiceTranscript"></div>
+        <button class="voice-popup-close" onclick="document.getElementById('voicePopup').style.display='none'">
+            <i class="fa-solid fa-times"></i>
+        </button>
+    </div>
+</div>
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 <script>
@@ -753,6 +793,64 @@ document.addEventListener('DOMContentLoaded', function() {
     // setTimeout(() => toggleChat(), 2000);
 });
 </script>
+<script>
+// ========== DARK MODE FUNCTIONALITY ==========
+
+// Check for saved theme preference
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme) {
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+} else {
+    // Check system preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (prefersDark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        updateThemeIcon('dark');
+    }
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    // Apply new theme
+    document.documentElement.setAttribute('data-theme', newTheme);
+    
+    // Save preference
+    localStorage.setItem('theme', newTheme);
+    
+    // Update icon
+    updateThemeIcon(newTheme);
+    
+    // Add animation
+    const toggleBtn = document.getElementById('themeToggle');
+    toggleBtn.classList.add('theme-toggle-animation');
+    setTimeout(() => {
+        toggleBtn.classList.remove('theme-toggle-animation');
+    }, 500);
+}
+
+function updateThemeIcon(theme) {
+    const icon = document.getElementById('themeIcon');
+    if (icon) {
+        if (theme === 'dark') {
+            icon.className = 'fa-solid fa-sun';
+        } else {
+            icon.className = 'fa-regular fa-moon';
+        }
+    }
+}
+
+// Listen for system theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (!localStorage.getItem('theme')) {
+        const newTheme = e.matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        updateThemeIcon(newTheme);
+    }
+});
+</script>
     <script>
     // ========== CHAT WIDGET FUNCTIONS ==========
     function toggleChat() {
@@ -836,6 +934,140 @@ document.addEventListener('keydown', function(event) {
         closeLoginPopup();
     }
 });
+</script>
+
+<script>
+// ========== VOICE SEARCH FUNCTIONALITY ==========
+
+// Check browser support on load
+document.addEventListener('DOMContentLoaded', function() {
+    checkVoiceSearchSupport();
+});
+
+function checkVoiceSearchSupport() {
+    const voiceBtn = document.getElementById('voiceSearchBtn');
+    if (!voiceBtn) return;
+    
+    // Check if browser supports speech recognition
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        voiceBtn.style.opacity = '0.5';
+        voiceBtn.title = 'Voice search not supported in your browser';
+        voiceBtn.disabled = true;
+        console.warn('Speech recognition not supported');
+    }
+}
+
+function startVoiceSearch() {
+    console.log('Voice search started');
+    
+    // Check for support
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Voice search is not supported in your browser. Please use Chrome, Edge, or Safari.');
+        return;
+    }
+    
+    const voiceBtn = document.getElementById('voiceSearchBtn');
+    
+    // Initialize speech recognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    // Configure
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    
+    // Visual feedback
+    voiceBtn.classList.add('listening');
+    voiceBtn.innerHTML = '<i class="fa-solid fa-microphone-lines"></i>';
+    
+    // Start listening
+    recognition.start();
+    
+    // Handle result
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        console.log('Heard:', transcript);
+        
+        // Show feedback
+        voiceBtn.classList.remove('listening');
+        voiceBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+        
+        // Redirect to search
+        window.location.href = `/search?q=${encodeURIComponent(transcript)}`;
+    };
+    
+    // Handle error
+    recognition.onerror = function(event) {
+        console.error('Voice recognition error:', event.error);
+        voiceBtn.classList.remove('listening');
+        voiceBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+        
+        let message = 'Error: ';
+        switch(event.error) {
+            case 'no-speech':
+                message = 'No speech detected. Please try again.';
+                break;
+            case 'audio-capture':
+                message = 'No microphone found. Please check your microphone.';
+                break;
+            case 'not-allowed':
+                message = 'Microphone access denied. Please allow microphone access.';
+                break;
+            case 'network':
+                message = 'Network error. Please check your connection.';
+                break;
+            default:
+                message = 'Could not access microphone.';
+        }
+        alert(message);
+    };
+    
+    // Handle end
+    recognition.onend = function() {
+        voiceBtn.classList.remove('listening');
+        voiceBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+    };
+}
+
+// Optional: Add a simple popup version for better UX
+function startVoiceSearchWithPopup() {
+    const popup = document.getElementById('voicePopup');
+    if (!popup) {
+        // If no popup, use simple version
+        startVoiceSearch();
+        return;
+    }
+    
+    popup.style.display = 'flex';
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    
+    recognition.onstart = function() {
+        document.getElementById('voiceSearchBtn').classList.add('listening');
+        document.querySelector('.voice-popup-content i').className = 'fa-solid fa-microphone-lines fa-bounce';
+    };
+    
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('voiceTranscript').textContent = transcript;
+    };
+    
+    recognition.onend = function() {
+        setTimeout(() => {
+            popup.style.display = 'none';
+            document.getElementById('voiceSearchBtn').classList.remove('listening');
+            document.querySelector('.voice-popup-content i').className = 'fa-solid fa-microphone';
+        }, 1500);
+    };
+    
+    recognition.start();
+}
 </script>
 </body>
 </html>

@@ -440,3 +440,461 @@ document.addEventListener('DOMContentLoaded', function() {
     initChat();
     {% endif %}
 });
+
+// ========== VOICE SEARCH FUNCTIONALITY ==========
+
+// ========== ENHANCED VOICE SEARCH FUNCTIONALITY ==========
+
+let recognition = null;
+let isListening = false;
+let mediaStream = null;
+
+// Check microphone availability on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkMicrophoneSupport();
+});
+
+function checkMicrophoneSupport() {
+    const voiceBtn = document.getElementById('voiceSearchBtn');
+    
+    // Check browser support
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        voiceBtn.style.opacity = '0.5';
+        voiceBtn.title = 'Voice search not supported in your browser';
+        voiceBtn.disabled = true;
+        console.warn('Speech recognition not supported');
+        return false;
+    }
+    
+    // Check if we can access microphone
+    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+        navigator.mediaDevices.enumerateDevices()
+            .then(function(devices) {
+                const hasMicrophone = devices.some(device => device.kind === 'audioinput');
+                if (!hasMicrophone) {
+                    voiceBtn.style.opacity = '0.5';
+                    voiceBtn.title = 'No microphone found';
+                    voiceBtn.disabled = true;
+                    console.warn('No microphone found');
+                }
+            })
+            .catch(function(err) {
+                console.log('Could not enumerate devices:', err);
+            });
+    }
+    
+    return true;
+}
+
+function requestMicrophonePermission() {
+    return new Promise((resolve, reject) => {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function(stream) {
+                    mediaStream = stream;
+                    // Stop all tracks immediately - we just needed permission
+                    stream.getTracks().forEach(track => track.stop());
+                    resolve(true);
+                })
+                .catch(function(err) {
+                    console.error('Microphone permission error:', err);
+                    let errorMessage = '';
+                    
+                    switch(err.name) {
+                        case 'NotAllowedError':
+                        case 'PermissionDeniedError':
+                            errorMessage = 'Microphone access denied. Please allow microphone access in your browser settings.';
+                            break;
+                        case 'NotFoundError':
+                        case 'DevicesNotFoundError':
+                            errorMessage = 'No microphone found. Please connect a microphone.';
+                            break;
+                        case 'NotReadableError':
+                        case 'TrackStartError':
+                            errorMessage = 'Microphone is busy. Please close other apps using it.';
+                            break;
+                        default:
+                            errorMessage = 'Could not access microphone. Error: ' + err.message;
+                    }
+                    
+                    reject(errorMessage);
+                });
+        } else {
+            reject('Your browser does not support microphone access');
+        }
+    });
+}
+
+async function startVoiceSearch() {
+    const voiceBtn = document.getElementById('voiceSearchBtn');
+    const voicePopup = document.getElementById('voicePopup');
+    const voiceTranscript = document.getElementById('voiceTranscript');
+    
+    // Reset transcript
+    voiceTranscript.textContent = '';
+    
+    try {
+        // First request microphone permission
+        await requestMicrophonePermission();
+        
+        // Show popup
+        voicePopup.classList.add('active');
+        voiceBtn.classList.add('listening');
+        isListening = true;
+        
+        // Initialize speech recognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        
+        // Configure recognition
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        recognition.maxAlternatives = 1;
+        
+        // Handle results
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            voiceTranscript.textContent = transcript;
+            
+            // If final result, perform search
+            if (event.results[0].isFinal) {
+                performVoiceSearch(transcript);
+            }
+        };
+        
+        // Handle errors
+        recognition.onerror = function(event) {
+            console.error('Voice recognition error:', event.error);
+            let errorMessage = 'An error occurred. ';
+            
+            switch(event.error) {
+                case 'no-speech':
+                    errorMessage = 'No speech detected. Please try again.';
+                    break;
+                case 'audio-capture':
+                    errorMessage = 'No microphone found. Please check your microphone.';
+                    break;
+                case 'not-allowed':
+                    errorMessage = 'Microphone access denied. Please allow microphone access.';
+                    break;
+                case 'network':
+                    errorMessage = 'Network error. Please check your internet connection.';
+                    break;
+                case 'aborted':
+                    errorMessage = 'Voice search was aborted.';
+                    break;
+                default:
+                    errorMessage = 'Error: ' + event.error;
+            }
+            
+            showVoiceError(errorMessage);
+            closeVoicePopup();
+        };
+        
+        // Handle end of speech
+        recognition.onend = function() {
+            if (isListening) {
+                // If we haven't gotten a result yet, wait a bit then close
+                setTimeout(() => {
+                    if (isListening) {
+                        if (voiceTranscript.textContent) {
+                            performVoiceSearch(voiceTranscript.textContent);
+                        } else {
+                            closeVoicePopup();
+                        }
+                    }
+                }, 2000);
+            }
+        };
+        
+        // Start listening
+        recognition.start();
+        
+    } catch (error) {
+        showVoiceError(error);
+        closeVoicePopup();
+    }
+}
+
+function showVoiceError(message) {
+    const voicePopup = document.getElementById('voicePopup');
+    const voiceTranscript = document.getElementById('voiceTranscript');
+    
+    voiceTranscript.innerHTML = `
+        <div style="color: #dc3545; padding: 10px;">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <p style="margin-top: 10px;">${message}</p>
+        </div>
+    `;
+    
+    // Auto close after 3 seconds
+    setTimeout(() => {
+        closeVoicePopup();
+    }, 3000);
+}
+
+function performVoiceSearch(query) {
+    if (query && query.trim()) {
+        const voiceTranscript = document.getElementById('voiceTranscript');
+        voiceTranscript.innerHTML = `
+            <div style="color: #28a745;">
+                <i class="fa-solid fa-check-circle"></i>
+                <p style="margin-top: 10px;">Searching for: "${query}"</p>
+            </div>
+        `;
+        
+        // Close popup after short delay
+        setTimeout(() => {
+            closeVoicePopup();
+            // Redirect to search results
+            window.location.href = `/search?q=${encodeURIComponent(query)}`;
+        }, 1500);
+    }
+}
+
+function closeVoicePopup() {
+    const voicePopup = document.getElementById('voicePopup');
+    const voiceBtn = document.getElementById('voiceSearchBtn');
+    
+    voicePopup.classList.remove('active');
+    voiceBtn.classList.remove('listening');
+    
+    if (recognition && isListening) {
+        try {
+            recognition.stop();
+        } catch (e) {
+            console.log('Error stopping recognition:', e);
+        }
+    }
+    
+    if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+    }
+    
+    isListening = false;
+}
+
+// Close voice popup when clicking outside
+document.addEventListener('click', function(event) {
+    const popup = document.getElementById('voicePopup');
+    const voiceBtn = document.getElementById('voiceSearchBtn');
+    
+    if (popup.classList.contains('active') && 
+        !popup.contains(event.target) && 
+        event.target !== voiceBtn && 
+        !voiceBtn.contains(event.target)) {
+        closeVoicePopup();
+    }
+});
+
+// Handle escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && document.getElementById('voicePopup').classList.contains('active')) {
+        closeVoicePopup();
+    }
+});
+
+function testMicrophone() {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function(stream) {
+                alert('✅ Microphone working!');
+                stream.getTracks().forEach(track => track.stop());
+            })
+            .catch(function(err) {
+                alert('❌ Microphone error: ' + err.message);
+            });
+    } else {
+        alert('❌ MediaDevices not supported');
+    }
+}
+
+// Uncomment to auto-test on page load (for debugging)
+// setTimeout(testMicrophone, 1000);
+
+function getBrowserInstructions() {
+    const userAgent = navigator.userAgent;
+    let instructions = '';
+    
+    if (userAgent.indexOf("Chrome") > -1) {
+        instructions = `
+            <h4>Chrome Instructions:</h4>
+            <ol>
+                <li>Click the lock/info icon in the address bar</li>
+                <li>Find "Microphone" in the permissions list</li>
+                <li>Change it to "Allow"</li>
+                <li>Refresh the page</li>
+            </ol>
+        `;
+    } else if (userAgent.indexOf("Firefox") > -1) {
+        instructions = `
+            <h4>Firefox Instructions:</h4>
+            <ol>
+                <li>Click the lock/info icon in the address bar</li>
+                <li>Find "Microphone" in the permissions list</li>
+                <li>Change it to "Allow"</li>
+                <li>Refresh the page</li>
+            </ol>
+        `;
+    } else if (userAgent.indexOf("Edg") > -1) {
+        instructions = `
+            <h4>Edge Instructions:</h4>
+            <ol>
+                <li>Click the lock/info icon in the address bar</li>
+                <li>Find "Microphone" in the permissions list</li>
+                <li>Change it to "Allow"</li>
+                <li>Refresh the page</li>
+            </ol>
+        `;
+    } else if (userAgent.indexOf("Safari") > -1) {
+        instructions = `
+            <h4>Safari Instructions:</h4>
+            <ol>
+                <li>Go to Safari > Preferences > Websites</li>
+                <li>Find "Microphone" in the left sidebar</li>
+                <li>Change permission for this site to "Allow"</li>
+                <li>Refresh the page</li>
+            </ol>
+        `;
+    }
+    
+    return instructions;
+}
+
+// Simplified working version
+function simpleVoiceSearch() {
+    if (!('webkitSpeechRecognition' in window)) {
+        alert('Voice search is only supported in Chrome, Edge, and Safari');
+        return;
+    }
+    
+    const recognition = new webkitSpeechRecognition();
+    recognition.lang = 'en-US';
+    
+    recognition.onstart = function() {
+        console.log('Voice recognition started');
+        document.getElementById('voiceSearchBtn').classList.add('listening');
+    };
+    
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        console.log('Heard:', transcript);
+        window.location.href = `/search?q=${encodeURIComponent(transcript)}`;
+    };
+    
+    recognition.onerror = function(event) {
+        console.error('Error:', event.error);
+        alert('Error: ' + event.error + '. Please check microphone permissions.');
+        document.getElementById('voiceSearchBtn').classList.remove('listening');
+    };
+    
+    recognition.start();
+}
+
+// Replace your startVoiceSearch with this simpler version for testing
+function startVoiceSearch() {
+    simpleVoiceSearch();
+}
+
+// Fix for login popup - make sure this code exists
+document.addEventListener('DOMContentLoaded', function() {
+    const popup = document.getElementById('loginPopup');
+    if (!popup) return;
+    
+    const userAuthenticated = document.body.dataset.userAuthenticated === 'true';
+    
+    if (!userAuthenticated) {
+        const popupClosed = sessionStorage.getItem('popupClosed');
+        console.log('Popup closed before:', popupClosed);
+        
+        if (!popupClosed) {
+            console.log("Showing popup in 1 second");
+            setTimeout(function() {
+                showLoginPopup();
+            }, 1000);
+        } else {
+            console.log("Popup was closed before - not showing");
+        }
+    } else {
+        console.log("User is logged in - not showing popup");
+    }
+});
+
+
+
+function toggleWishlist(productId, event) {
+    event.stopPropagation(); // Prevent card click
+    
+    const btn = event.currentTarget;
+    const icon = btn.querySelector('i');
+    const isActive = btn.classList.contains('active');
+    
+    // Determine endpoint based on current state
+    const endpoint = isActive ? 
+        `/api/wishlist/remove/${productId}` : 
+        `/api/wishlist/add/${productId}`;
+    
+    // Show loading state
+    btn.style.pointerEvents = 'none';
+    icon.className = 'fa-solid fa-spinner fa-spin';
+    
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Toggle active state
+            btn.classList.toggle('active');
+            
+            // Update icon
+            if (btn.classList.contains('active')) {
+                icon.className = 'fa-solid fa-heart';
+                showToast('Added to wishlist! ❤️');
+            } else {
+                icon.className = 'fa-regular fa-heart';
+                showToast('Removed from wishlist');
+            }
+            
+            // Update wishlist count in navbar
+            const badge = document.querySelector('.wishlist-count-badge');
+            if (badge) {
+                badge.textContent = data.wishlist_count;
+                badge.style.display = data.wishlist_count > 0 ? 'flex' : 'none';
+            }
+        } else {
+            showToast(data.message || 'Error updating wishlist', 'error');
+            // Revert icon
+            icon.className = isActive ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to update wishlist', 'error');
+        icon.className = isActive ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+    })
+    .finally(() => {
+        btn.style.pointerEvents = 'auto';
+    });
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
