@@ -55,17 +55,23 @@ def home():
     # Total products count
     total_products = Product.query.count()
     
+    # Get user's wishlist IDs if logged in
+    user_wishlist_ids = []
+    if current_user.is_authenticated:
+        user_wishlist_ids = [item.product_id for item in current_user.wishlist_items]
+        
     categories = ['Appliances', 'Home & Kitchen', 'Fashion', 'Sports', 'Beauty', 'Toys', 'Books', 'Furniture', 
                   'Bags', 'Mobiles', 'Laptop', 'Watch', 'Men Dresses', 'Woman Dresses', 'Decorations', 
                   'Pets care', 'Bathing products', 'Skin care', 'Face care', 'Shoes', 'Mens Accesories', 
                   'Women Accesories', 'Gifts', 'Hair care']
     
     return render_template('index.html', 
-                         featured_products=latest_products,  # Keep for backward compatibility
+                         featured_products=latest_products,
                          latest_products=latest_products,
                          best_seller_products=best_seller_products,
                          total_products=total_products,
-                         categories=categories)
+                         categories=categories,
+                         user_wishlist_ids=user_wishlist_ids)  # ← ADD THIS LINE
 
 
 @app.route('/about')
@@ -92,7 +98,6 @@ import time
 
 # Initialize search history (can be stored in database later)
 search_history = SearchHistory()
-
 @app.route('/search')
 def search():
     """
@@ -137,8 +142,13 @@ def search():
     # Extract just the products from results
     products_found = [r[0] for r in results]
     
+    # Get user's wishlist IDs if logged in
+    user_wishlist_ids = []
+    if current_user.is_authenticated:
+        user_wishlist_ids = [item.product_id for item in current_user.wishlist_items]
+    
     # Calculate search time
-    search_time = round((time.time() - start_time) * 1000, 2)  # in milliseconds
+    search_time = round((time.time() - start_time) * 1000, 2)
     
     # Paginate results
     total = len(products_found)
@@ -153,7 +163,8 @@ def search():
                          page=page,
                          per_page=per_page,
                          search_time=search_time,
-                         related_searches=related)
+                         related_searches=related,
+                         user_wishlist_ids=user_wishlist_ids)  # ← ADD THIS LINE
 
 
 @app.route('/search/click', methods=['POST'])
@@ -404,7 +415,6 @@ def save_chat_transcript(chat_data):
     db.session.add(transcript)
     db.session.commit()
 
-
 @app.route('/products')
 def all_products():
     # Define categories
@@ -450,13 +460,40 @@ def all_products():
     brands_raw = db.session.query(Product.brand).distinct().all()
     brands = [b[0] for b in brands_raw if b[0]]
     
-    print(f"Products found: {len(all_products)}")  # Debug in console
+    # Get user's wishlist IDs if logged in
+    user_wishlist_ids = []
+    if current_user.is_authenticated:
+        user_wishlist_ids = [item.product_id for item in current_user.wishlist_items]
+    
+    # 🔍 DEBUG PRINTS
+    print("=" * 50)
+    print(f"🔍 DEBUG: all_products route")
+    print(f"User authenticated: {current_user.is_authenticated}")
+    print(f"User ID: {current_user.id if current_user.is_authenticated else 'Not logged in'}")
+    print(f"User wishlist IDs: {user_wishlist_ids}")
+    print(f"Number of products: {len(all_products)}")
+    print("=" * 50)
     
     return render_template('all_products.html', 
                          products=all_products, 
                          brands=brands,
                          categories=categories,
-                         filters=request.args)
+                         filters=request.args,
+                         user_wishlist_ids=user_wishlist_ids)  # ← Make sure this is here!
+
+
+@app.route('/test-wishlist')
+@login_required
+def test_wishlist():
+    """Test route to check wishlist"""
+    items = Wishlist.query.filter_by(user_id=current_user.id).all()
+    result = f"<h1>Wishlist for {current_user.name}</h1>"
+    result += f"<p>Total items: {len(items)}</p>"
+    result += "<ul>"
+    for item in items:
+        result += f"<li>Product ID: {item.product_id} - Added: {item.created_at}</li>"
+    result += "</ul>"
+    return result                         
 
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
@@ -490,6 +527,7 @@ def product_detail(product_id):
                          product=product, 
                          related_products=related_products,
                          recent_products=recent_products)
+
 
 @app.route('/api/wishlist/add/<int:product_id>', methods=['POST'])
 @login_required
@@ -553,7 +591,7 @@ def wishlist():
     
     return render_template('wishlist.html', products=products)
 
-
+#-------------------------------------------------------------------------------------------------------------------------------------
 
 
 @app.route('/add-to-cart/<int:product_id>', methods=['POST'])
@@ -790,7 +828,7 @@ def admin_dashboard():
     users = User.query.all()
     products = Product.query.all()
     return render_template('admin/dashboard.html', orders=orders, users=users, products=products)
-
+#-------------------------------------------------------------------------------------------------------------------------------------
 # ========== ADMIN ROUTES - ADD THESE RIGHT AFTER YOUR EXISTING ADMIN ROUTES ==========
 
 @app.route('/admin/products')
@@ -868,7 +906,7 @@ def admin_chats():
     return render_template('admin/chats.html')
 
 
-
+#-------------------------------------------------------------------------------------------------------------------------------------
 
 # ========== ADMIN PRODUCT EDIT ROUTE ==========
 # Make sure you have ONLY ONE of these!
@@ -910,7 +948,7 @@ def admin_edit_product(product_id):
               'Levi\'s', 'H&M', 'Zara', 'Arrow', 'US Polo', 'Raymond', 'Woodland']
     
     return render_template('admin/edit_product.html', product=product, categories=categories, brands=brands)
-
+#-------------------------------------------------------------------------------------------------------------------------------------
 @app.route('/admin/product/delete/<int:product_id>', methods=['POST'])
 @login_required
 @admin_required
@@ -920,7 +958,7 @@ def admin_delete_product(product_id):
     db.session.commit()
     flash('Product deleted successfully!', 'success')
     return redirect(url_for('admin_products'))
-
+#-------------------------------------------------------------------------------------------------------------------------------------
 @app.route('/api/product/<int:product_id>')
 def api_product_detail(product_id):
     product = Product.query.get_or_404(product_id)
@@ -933,7 +971,7 @@ def api_product_detail(product_id):
         'rating': product.rating,
         'reviews': product.reviews_count
     })    
-
+#-------------------------------------------------------------------------------------------------------------------------------------
 @app.route('/admin/update-order/<int:order_id>', methods=['POST'])
 @login_required
 @admin_required
@@ -959,7 +997,7 @@ app.config['MAIL_PASSWORD'] = 'your-app-password'      # Gmail App Password
 app.config['MAIL_DEFAULT_SENDER'] = 'your-email@gmail.com'
 
 mail = Mail(app)
-
+#-------------------------------------------------------------------------------------------------------------------------------------
 
 def send_order_confirmation_email(order):
     """Send order confirmation email to customer"""
@@ -999,8 +1037,8 @@ def send_order_confirmation_email(order):
         print(f"❌ Failed to send email: {str(e)}")
         return False
     
-    
-
+  #-------------------------------------------------------------------------------------------------------------------------------------  
+  #-------------------------------------------------------------------------------------------------------------------------------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -1024,7 +1062,7 @@ def login():
             flash('Invalid email or password.', 'danger')
     
     return render_template('login.html', form=form)
-
+#-------------------------------------------------------------------------------------------------------------------------------------
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
@@ -1048,7 +1086,7 @@ def register():
         return redirect(url_for('login'))
     
     return render_template('register.html', form=form)
-
+#-------------------------------------------------------------------------------------------------------------------------------------
 @app.route('/api/login', methods=['POST'])
 def api_login():
     email = request.form.get('email')
@@ -1069,7 +1107,7 @@ def api_login():
             'success': False,
             'error': 'Invalid email or password.'
         })
-
+#-------------------------------------------------------------------------------------------------------------------------------------
 @app.route('/api/register', methods=['POST'])
 def api_register():
     name = request.form.get('name')
@@ -1110,7 +1148,7 @@ def api_register():
     })
 
 
-
+#-------------------------------------------------------------------------------------------------------------------------------------
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
@@ -1126,7 +1164,7 @@ def forgot_password():
         return redirect(url_for('login'))
     
     return render_template('forgot_password.html')
-
+#-------------------------------------------------------------------------------------------------------------------------------------
 @app.route('/logout')
 @login_required
 def logout():
@@ -1134,6 +1172,7 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('home'))
 
+#-------------------------------------------------------------------------------------------------------------------------------------
 @app.route('/api/filter-products', methods=['POST'])
 def filter_products_api():
     data = request.get_json()
@@ -1178,6 +1217,7 @@ def filter_products_api():
         'count': len(products)
     })
 
+#-------------------------------------------------------------------------------------------------------------------------------------
 @app.route('/debug-products')
 def debug_products():
     products = Product.query.all()
@@ -1188,6 +1228,8 @@ def debug_products():
         html += f"<tr><td>{p.id}</td><td>{p.name}</td><td>{p.category}</td><td>₹{p.price}</td></tr>"
     html += f"</table><p>Total: {len(products)} products</p>"
     return html
+
+#-------------------------------------------------------------------------------------------------------------------------------------
 
 # Create tables and sample data
 def create_sample_products():
@@ -2168,6 +2210,7 @@ Product(name='Redmi 12 5G', price=12499, compare_price=14999, discount=17,
     else:
         print(f"📊 Database already has {Product.query.count()} products")
 
+#-------------------------------------------------------------------------------------------------------------------------------------
 # With this:
 with app.app_context():
     db.create_all()

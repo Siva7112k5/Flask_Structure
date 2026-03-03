@@ -181,7 +181,7 @@ document.addEventListener('keydown', function(event) {
         closeQuickView();
     }
 });
-
+/* 
 // Toggle wishlist function
 function toggleWishlist(productId, event) {
     event.stopPropagation(); // Prevent card click
@@ -242,7 +242,7 @@ function toggleWishlist(productId, event) {
     .finally(() => {
         btn.style.pointerEvents = 'auto';
     });
-}
+} */
 
 
 // Chat functionality
@@ -798,7 +798,7 @@ function startVoiceSearch() {
     simpleVoiceSearch();
 }
 
-// Fix for login popup - make sure this code exists
+/* // Fix for login popup - make sure this code exists
 document.addEventListener('DOMContentLoaded', function() {
     const popup = document.getElementById('loginPopup');
     if (!popup) return;
@@ -821,11 +821,23 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("User is logged in - not showing popup");
     }
 });
+ */
 
 
-
-function toggleWishlist(productId, event) {
+/* function toggleWishlist(productId, event) {
     event.stopPropagation(); // Prevent card click
+    
+    // Check if user is logged in first
+    const isAuthenticated = document.body.dataset.userAuthenticated === 'true';
+    
+    if (!isAuthenticated) {
+        showToast('Please login to add items to wishlist', 'error');
+        // Show login popup
+        if (typeof showLoginPopup === 'function') {
+            showLoginPopup();
+        }
+        return;
+    }
     
     const btn = event.currentTarget;
     const icon = btn.querySelector('i');
@@ -883,6 +895,30 @@ function toggleWishlist(productId, event) {
     });
 }
 
+// Add this to your JavaScript file (at the bottom or in a script tag)
+function toggleWishlist(button) {
+    event.preventDefault(); // Prevent any default button behavior
+    
+    // Toggle between regular and solid heart icon
+    const icon = button.querySelector('i');
+    if (icon.classList.contains('fa-regular')) {
+        icon.classList.remove('fa-regular');
+        icon.classList.add('fa-solid');
+        icon.style.color = '#ff4444'; // Red color for wishlisted items
+    } else {
+        icon.classList.remove('fa-solid');
+        icon.classList.add('fa-regular');
+        icon.style.color = ''; // Reset to default color
+    }
+    
+    // Optional: Save to localStorage
+    const productCard = button.closest('.product-card');
+    if (productCard) {
+        const productName = productCard.querySelector('h3')?.textContent;
+        console.log(`Wishlist toggled for: ${productName}`);
+    }
+}
+
 function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast-notification ${type}`;
@@ -898,3 +934,15 @@ function showToast(message, type = 'success') {
         toast.remove();
     }, 3000);
 }
+
+
+// Test if the API is working
+fetch('/api/wishlist/add/1', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+})
+.then(res => res.json())
+.then(data => console.log('API Response:', data))
+.catch(err => console.error('API Error:', err));
+
+ */

@@ -79,11 +79,12 @@
                 <i class="fa-regular fa-moon" id="themeIcon"></i>
             </button>
             
-      <!-- Add near the cart icon -->
 <a href="{{ url_for('wishlist') }}" class="wishlist-icon">
     <i class="fa-regular fa-heart"></i>
     {% if current_user.is_authenticated %}
-    <span class="wishlist-count-badge">{{ current_user.wishlist_items|length }}</span>
+    <span class="wishlist-count-badge" id="nav-wishlist-count">
+        {{ current_user.wishlist_items|length if current_user.wishlist_items else 0 }}
+    </span>
     {% endif %}
 </a>
             <!-- Cart Button -->

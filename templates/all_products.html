@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}All Products - Triowise{% endblock %}
 {% block content %}
+
+
+
+<!-- Rest of your template -->
 <div class="products-page">
     <div class="products-layout">
       <!-- Filters Sidebar -->
@@ -127,6 +131,7 @@
     <i class="fa-regular fa-eye"></i> Quick View
 </button>
 
+
 <button class="wishlist-btn {% if product.id in user_wishlist_ids %}active{% endif %}" 
         onclick="toggleWishlist({{ product.id }}, event)"
         data-product-id="{{ product.id }}">
@@ -201,7 +206,9 @@
     color: #666;
 }
 </style>
-
+{% if user_wishlist_ids is defined %}
+<script>console.log('Wishlist IDs:', {{ user_wishlist_ids|tojson }});</script>
+{% endif %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Get current URL parameters
@@ -439,6 +446,97 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script>
+// ========== WISHLIST FUNCTIONALITY ==========
+function toggleWishlist(productId, event) {
+    event.stopPropagation(); // Prevent card click
+    
+    // Check if user is logged in
+    const isAuthenticated = document.body.dataset.userAuthenticated === 'true';
+    
+    if (!isAuthenticated) {
+        // Show login popup
+        if (typeof showLoginPopup === 'function') {
+            showLoginPopup();
+        } else {
+            window.location.href = '/login?next=' + window.location.pathname;
+        }
+        return;
+    }
+    
+    const btn = event.currentTarget;
+    const icon = btn.querySelector('i');
+    const isActive = btn.classList.contains('active');
+    
+    // Determine endpoint based on current state
+    const endpoint = isActive ? 
+        `/api/wishlist/remove/${productId}` : 
+        `/api/wishlist/add/${productId}`;
+    
+    // Show loading state
+    btn.style.pointerEvents = 'none';
+    icon.className = 'fa-solid fa-spinner fa-spin';
+    
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Toggle active state
+            btn.classList.toggle('active');
+            
+            // Update icon
+            if (btn.classList.contains('active')) {
+                icon.className = 'fa-solid fa-heart';
+                showToast('Added to wishlist! ❤️');
+            } else {
+                icon.className = 'fa-regular fa-heart';
+                showToast('Removed from wishlist');
+            }
+            
+            // Update wishlist count in navbar
+            const badge = document.querySelector('.wishlist-count-badge');
+            if (badge) {
+                badge.textContent = data.wishlist_count;
+                badge.style.display = data.wishlist_count > 0 ? 'flex' : 'none';
+            }
+        } else {
+            showToast(data.message || 'Error updating wishlist', 'error');
+            // Revert icon
+            icon.className = isActive ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to update wishlist', 'error');
+        icon.className = isActive ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+    })
+    .finally(() => {
+        btn.style.pointerEvents = 'auto';
+    });
+}
+
+// ========== TOAST NOTIFICATION FUNCTION ==========
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
+<script>
 function applyFilters() {
     let url = '/products?';
     const params = [];
@@ -474,4 +572,129 @@ function applyFilters() {
     window.location.href = url + params.join('&');
 }
 </script>
+<script>
+// ========== QUICK VIEW FUNCTIONALITY ==========
+function quickView(productId, event) {
+    event.stopPropagation(); // Prevent card click
+    
+    // Check if modal exists, if not create it
+    let modal = document.getElementById('quickViewModal');
+    if (!modal) {
+        createQuickViewModal();
+        modal = document.getElementById('quickViewModal');
+    }
+    
+    const content = document.getElementById('quickViewContent');
+    
+    // Show modal with loading
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Show loading state
+    content.innerHTML = `
+        <div class="quick-view-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Loading product details...</p>
+        </div>
+    `;
+    
+    // Fetch product details
+    fetch(`/api/product/${productId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Product not found');
+            }
+            return response.json();
+        })
+        .then(product => {
+            content.innerHTML = `
+                <div class="quick-view-grid">
+                    <div class="quick-view-image">
+                        <img src="${product.image}" alt="${product.name}">
+                    </div>
+                    <div class="quick-view-details">
+                        <h2>${product.name}</h2>
+                        
+                        <div class="quick-view-rating">
+                            <span class="stars">
+                                ${'★'.repeat(Math.floor(product.rating))}${'☆'.repeat(5 - Math.floor(product.rating))}
+                            </span>
+                            <span>(${product.reviews} reviews)</span>
+                        </div>
+                        
+                        <div class="quick-view-price">
+                            <span class="current-price">₹${product.price}</span>
+                            ${product.compare_price ? `<span class="original-price">₹${product.compare_price}</span>` : ''}
+                        </div>
+                        
+                        <p class="quick-view-description">${product.description || product.short_description || 'No description available.'}</p>
+                        
+                        <div class="quick-view-actions">
+                            <button class="quick-view-add-to-cart" onclick="addToCart(${product.id}); closeQuickView();">
+                                <i class="fa-solid fa-cart-plus"></i> Add to Cart
+                            </button>
+                            <button class="quick-view-details-btn" onclick="window.location.href='/product/${product.id}'">
+                                View Full Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            content.innerHTML = `
+                <div class="quick-view-error">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <p>Failed to load product details. Please try again.</p>
+                    <button onclick="closeQuickView()">Close</button>
+                </div>
+            `;
+        });
+}
+
+function createQuickViewModal() {
+    const modalHTML = `
+        <div id="quickViewModal" class="quick-view-modal" style="display: none;">
+            <div class="quick-view-modal-content">
+                <div class="quick-view-modal-header">
+                    <h3>Quick View</h3>
+                    <button class="quick-view-close" onclick="closeQuickView()">&times;</button>
+                </div>
+                <div class="quick-view-modal-body" id="quickViewContent">
+                    <div class="quick-view-loading">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <p>Loading product details...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function closeQuickView() {
+    const modal = document.getElementById('quickViewModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('quickViewModal');
+    if (modal && event.target === modal) {
+        closeQuickView();
+    }
+});
+
+// Handle escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeQuickView();
+    }
+});
+</script>
+
 {% endblock %}
