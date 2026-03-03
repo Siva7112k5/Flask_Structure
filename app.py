@@ -10,7 +10,26 @@ from flask import render_template
 from textblob import TextBlob
 from models import Wishlist  # Or wherever your models are stored
 import os  # Make sure this is imported
+import os
+from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
+
+# Add this after app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
+
+# Database configuration for production
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///triowise.db')
+if database_url and database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+
+# Create upload directories if they don't exist
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'products'), exist_ok=True)
+os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'avatars'), exist_ok=True)
+os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'reviews'), exist_ok=True)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///triowise.db'
@@ -2300,9 +2319,23 @@ def product_review(product_id):
         return redirect(url_for('product_detail', product_id=product_id))
     
     return render_template('add_review.html', form=form, product=product)
+# At the VERY TOP of app.py, add these imports
+import os
+import socketio
+
+# ... your existing code ...
+
+# At the BOTTOM of app.py, replace your existing code with this:
+
 if __name__ == '__main__':
+    # Get port from environment (Render sets this automatically)
+    port = int(os.environ.get('PORT', 3000))
+    
+    # Get debug mode from environment
+    debug_mode = os.environ.get('FLASK_ENV', 'production') == 'development'
+    
     with app.app_context():
-        # Create tables if they don't exist (doesn't delete existing data)
+        # Create tables if they don't exist
         db.create_all()
         
         # Only add sample products if NO products exist
@@ -2312,9 +2345,13 @@ if __name__ == '__main__':
         else:
             print(f"📊 Database already has {Product.query.count()} products")
         
-        # Debug stats - shows your actual data
+        # Debug stats
         print(f"👥 Users in database: {User.query.count()}")
         print(f"📦 Orders in database: {Order.query.count()}")
     
-    # Start the app
-    app.run(debug=True, port=3000)
+    # For Render, use socketio.run with production settings
+    socketio.run(app, 
+                 host='0.0.0.0',  # Required for Render
+                 port=port,
+                 debug=debug_mode,
+                 allow_unsafe_werkzeug=True)  # Required for Render

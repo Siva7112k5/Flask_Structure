@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: triowise
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+
+databases:
+  - name: triowise-db
+    databaseName: triowise
+    user: triowise_user
