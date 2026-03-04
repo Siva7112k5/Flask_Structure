@@ -866,7 +866,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e =
         }
     }
     </script>
-<script>
+<!-- <script>
 // Login Popup Functionality
 document.addEventListener('DOMContentLoaded', function() {
     console.log("DOM loaded - checking login status");
@@ -935,6 +935,155 @@ document.addEventListener('keydown', function(event) {
         closeLoginPopup();
     }
 });
+</script> -->
+<script>
+    // ========== LOGIN POPUP FUNCTIONALITY ==========
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM loaded - checking login status");
+    
+    const popup = document.getElementById('loginPopup');
+    if (!popup) {
+        console.log("Popup element not found!");
+        return;
+    }
+    
+    // Get user authentication status from data attribute
+    const userAuthenticated = document.body.dataset.userAuthenticated === 'true';
+    console.log("User authenticated:", userAuthenticated);
+    
+    // Check if user is NOT logged in
+    if (!userAuthenticated) {
+        console.log("User not logged in - checking popup status");
+        const popupClosed = sessionStorage.getItem('popupClosed');
+        console.log("Popup closed before:", popupClosed);
+        
+        // Show popup after 1 second delay if not closed
+        if (!popupClosed) {
+            console.log("Showing popup in 1 second");
+            setTimeout(function() {
+                showLoginPopup();
+            }, 1000);
+        } else {
+            console.log("Popup was closed before - not showing");
+        }
+    } else {
+        console.log("User is logged in - not showing popup");
+    }
+});
+
+function showLoginPopup() {
+    console.log("Showing login popup");
+    const popup = document.getElementById('loginPopup');
+    if (popup) {
+        popup.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeLoginPopup() {
+    console.log("Closing login popup");
+    const popup = document.getElementById('loginPopup');
+    if (popup) {
+        popup.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        sessionStorage.setItem('popupClosed', 'true');
+        console.log("Popup closed - saved to sessionStorage");
+    }
+}
+
+// Close popup when clicking outside
+window.addEventListener('click', function(event) {
+    const popup = document.getElementById('loginPopup');
+    if (popup && event.target === popup) {
+        closeLoginPopup();
+    }
+});
+
+// Handle escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeLoginPopup();
+    }
+});
+
+// ========== FIX: Handle Popup Form Submission with AJAX ==========
+
+// Add this to handle the popup login form
+document.addEventListener('DOMContentLoaded', function() {
+    const popupForm = document.querySelector('#loginPopup form');
+    
+    if (popupForm) {
+        popupForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent normal form submission
+            
+            const formData = new FormData(popupForm);
+            
+            // Show loading state
+            const submitBtn = popupForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing in...';
+            
+            // Send AJAX request
+            fetch('/api/login', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close popup and reload page
+                    closeLoginPopup();
+                    showToast('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    // Show error in popup
+                    showToast(data.error || 'Invalid email or password', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Login failed. Please try again.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+        });
+    }
+});
+
+// ========== TOAST NOTIFICATION FUNCTION ==========
+function showToast(message, type = 'success') {
+    // Check if toast container exists, create if not
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+        if (toastContainer.children.length === 0) {
+            toastContainer.remove();
+        }
+    }, 3000);
+}
 </script>
 
 <script>
