@@ -1,53 +1,69 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, session, jsonify
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, User, Product, Order, OrderItem, Review, ReviewImage  # Added ReviewImage
-from forms import LoginForm, RegisterForm, ReviewForm
-from functools import wraps
+# ========== IMPORTS ==========
+import os
 import random
 import string
+import uuid
 from datetime import datetime
-from flask import render_template
+from functools import wraps
+
+from flask import Flask, render_template, redirect, url_for, flash, request, session, jsonify
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_mail import Mail
 from textblob import TextBlob
-from models import Wishlist  # Or wherever your models are stored
-import os  # Make sure this is imported
-import os
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Import from local files
+from models import db, User, Product, Order, OrderItem, Review, ReviewImage, Wishlist
+from forms import LoginForm, RegisterForm, ReviewForm
 
-# Add this after app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
+# Optional dotenv for local development
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    print("✅ dotenv loaded")
+except ImportError:
+    print("⚠️ dotenv not installed, using environment variables")
 
-# Database configuration for production
+# ========== CREATE FLASK APP ==========
+app = Flask(__name__)
+
+# ========== APP CONFIGURATION ==========
+# Secret key
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
+
+# Database configuration
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///triowise.db')
 if database_url and database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Create upload directories if they don't exist
+# Upload configuration
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+# Email configuration (optional)
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
+
+# ========== CREATE UPLOAD DIRECTORIES ==========
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'products'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'avatars'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'reviews'), exist_ok=True)
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///triowise.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# ✅ IMPORTANT: Add upload configuration
-app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-
-# Make sure upload directory exists
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'reviews'), exist_ok=True)
-
+# ========== INITIALIZE EXTENSIONS ==========
 db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+mail = Mail(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -2320,38 +2336,68 @@ def product_review(product_id):
     
     return render_template('add_review.html', form=form, product=product)
 # At the VERY TOP of app.py, add these imports
-import os
-import socketio
+# ... all your routes and functions ...
 
-# ... your existing code ...
-
-# At the BOTTOM of app.py, replace your existing code with this:
-
+# At the VERY BOTTOM of app.py
+# ========== RUN THE APP ==========
 if __name__ == '__main__':
-    # Get port from environment (Render sets this automatically)
-    port = int(os.environ.get('PORT', 3000))
+    import socket
     
-    # Get debug mode from environment
-    debug_mode = os.environ.get('FLASK_ENV', 'production') == 'development'
+    def find_available_port(start_port=3000, max_attempts=10):
+        for port in range(start_port, start_port + max_attempts):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.bind(('0.0.0.0', port))
+                    return port
+            except OSError:
+                continue
+        return start_port
+
+    # Get port from environment or find available
+    requested_port = int(os.environ.get('PORT', 3000))
+    port = find_available_port(requested_port)
     
+    if port != requested_port:
+        print(f"⚠️ Port {requested_port} was in use, using port {port} instead")
+    
+    # Get debug mode
+    debug_mode = os.environ.get('FLASK_ENV', 'development') == 'development'
+    
+    print("=" * 60)
+    print("🚀 Triowise Application Started Successfully!")
+    print("=" * 60)
+    print(f"🔧 Debug Mode: {debug_mode}")
+    print(f"📊 Database: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    
+    # ALL DATABASE QUERIES MUST BE INSIDE app.app_context()
     with app.app_context():
         # Create tables if they don't exist
         db.create_all()
+        print("✅ Database tables created/verified")
         
-        # Only add sample products if NO products exist
-        if Product.query.count() == 0:
-            create_sample_products()
-            print("✅ Sample products created!")
-        else:
-            print(f"📊 Database already has {Product.query.count()} products")
+        # Now these queries work!
+        user_count = User.query.count()
+        order_count = Order.query.count()
+        product_count = Product.query.count()
         
-        # Debug stats
-        print(f"👥 Users in database: {User.query.count()}")
-        print(f"📦 Orders in database: {Order.query.count()}")
+        print(f"👥 Users: {user_count}")
+        print(f"📦 Orders: {order_count}")
+        print(f"📦 Products: {product_count}")
     
-    # For Render, use socketio.run with production settings
+    print("-" * 60)
+    print(f"🌐 LOCAL URL: http://127.0.0.1:{port}")
+    try:
+        host_ip = socket.gethostbyname(socket.gethostname())
+        print(f"🌐 NETWORK URL: http://{host_ip}:{port}")
+    except:
+        print("🌐 NETWORK URL: Check your network settings")
+    print("-" * 60)
+    print("Press CTRL+C to stop the server")
+    print("=" * 60)
+    
+    # Start the app
     socketio.run(app, 
-                 host='0.0.0.0',  # Required for Render
+                 host='0.0.0.0',
                  port=port,
                  debug=debug_mode,
-                 allow_unsafe_werkzeug=True)  # Required for Render
+                 allow_unsafe_werkzeug=True)
