@@ -330,7 +330,7 @@ body {
 
 /* ========== RESPONSIVE DESIGN ========== */
 
-/* Add mobile menu styles */
+/* Mobile menu overlay */
 .mobile-menu-overlay {
     display: none;
     position: fixed;
@@ -405,7 +405,7 @@ body {
 .mobile-menu-item i {
     margin-right: 12px;
     width: 20px;
-    color: #4CAF50;
+    color: #4c8b3b;
 }
 
 /* Tablet Landscape */
@@ -425,30 +425,21 @@ body {
     }
 }
 
-/* Tablet Portrait - Show mobile menu */
+/* ========== MODIFIED MOBILE VIEW ========== */
+/* Tablet Portrait - Show mobile menu with logo left and login/menu right */
 @media (max-width: 768px) {
     .nav-container {
         padding: 10px 20px;
-        position: relative;
-        flex-wrap: wrap;
+        display: flex;
+        align-items: center;
+        justify-content: space-between; /* This pushes items apart */
+        flex-wrap: nowrap; /* Prevent wrapping */
     }
     
-    /* Show mobile menu button */
-    .mobile-menu-toggle {
-        display: flex !important;
-        order: 1;
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        padding: 5px 10px;
-        color: #333;
-    }
-    
-    /* Logo order */
+    /* Logo on LEFT side */
     .logo {
-        order: 2;
-        margin-left: 0;
+        order: 1;
+        margin-right: auto; /* Push everything else to the right */
     }
     
     /* Desktop nav hidden */
@@ -456,67 +447,103 @@ body {
         display: none !important;
     }
     
-    /* Search moves to bottom */
+    /* Search hidden on mobile */
     .search-container {
-        order: 4;
-        max-width: 100%;
-        margin: 15px 0 5px;
-        flex: 0 0 100%;
+        display: none !important;
     }
     
-    /* Nav actions order */
+    /* Right side container for login + menu */
     .nav-actions {
         order: 3;
+        display: flex;
+        align-items: center;
         gap: 8px;
-        margin-left: auto;
+        margin-left: 0; /* Remove auto margin */
     }
     
-    /* Hide text on mobile */
-    .cart-btn span:not(.cart-count) {
+    /* Show mobile menu button on RIGHT side */
+    .mobile-menu-toggle {
+        display: flex !important;
+        order: 4; /* Put it after login button */
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 5px;
+        color: #333;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        transition: background 0.3s;
+    }
+    
+    .mobile-menu-toggle:hover {
+        background: #f0f0f0;
+    }
+    
+    /* Login button styling - visible on mobile */
+    .login-btn-side{
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 16px;
+        font-size: 14px;
+        border-radius: 30px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.3s;
+        order: 3;
+        white-space: nowrap;
+       
+    }
+    .login-btn{
         display: none;
-    }
-    
-    .cart-btn {
-        padding: 8px;
-        position: relative;
-        display: none;
-    }
-    
-    .login-btn span {
-        display: none;
-    }
-    
-    .login-btn {
-        padding: 8px 12px;
-        font-size: 13px;
     }
     
     .login-btn i {
-        margin: 0;
+        margin-right: 5px;
         font-size: 14px;
     }
     
-    /* Voice search - still fixed */
-    .voice-search-btn {
-        width: 32px;
-        height: 32px;
+    .login-btn-logout-btn {
+            display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 16px;
         font-size: 14px;
+        border-radius: 30px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.3s;
+        order: 3;
+        white-space: nowrap;
+        text-decoration: none;
+       
     }
     
-    /* Adjust search wrapper for mobile */
-    .search-wrapper {
-        width: 100%;
+    .login-btn.logout-btn i {
+        margin-right: 5px;
     }
     
-    .search-wrapper input {
-        width: 100%;
+    /* Hide cart and wishlist on mobile (they'll be in menu) */
+    .cart-btn,
+    .wishlist-icon,
+    .theme-toggle,
+    .menu-btn {
+        display: none !important;
     }
 }
 
 /* Mobile */
 @media (max-width: 480px) {
     .nav-container {
-        padding: 8px 12px;
+        padding: 8px 15px;
     }
     
     .logo-main {
@@ -528,51 +555,21 @@ body {
         padding: 2px 6px;
     }
     
-    .nav-actions {
-        gap: 5px;
+    /* Login button smaller on mobile */
+    .login-btn {
+        padding: 6px 12px;
+        font-size: 13px;
+        
     }
     
-    .theme-toggle,
-    .wishlist-icon,
-    .menu-btn {
+    .login-btn i {
+        font-size: 12px;
+    }
+    
+    .mobile-menu-toggle {
         width: 36px;
         height: 36px;
-        font-size: 18px;
-    }
-    
-    .cart-btn {
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .cart-count {
-        top: 0px;
-        right: 0px;
-        width: 16px;
-        height: 16px;
-        font-size: 10px;
-    }
-    
-    .search-wrapper input {
-        height: 42px;
-        font-size: 14px;
-        padding: 0 45px 0 15px;
-        border-radius: 25px;
-    }
-    
-    .search-icon {
-        left: 12px;
-        font-size: 16px;
-    }
-    
-    .voice-search-btn {
-        width: 35px;
-        height: 35px;
-        right: 5px;
-        font-size: 15px;
+        font-size: 20px;
     }
     
     .mobile-menu-panel {
@@ -591,28 +588,28 @@ body {
     }
     
     .logo-badge {
-        display: none;
-    }
-    
-    .nav-actions {
-        gap: 3px;
-    }
-    
-    .theme-toggle,
-    .wishlist-icon,
-    .menu-btn,
-    .cart-btn {
-        width: 32px;
-        height: 32px;
-        font-size: 16px;
+        display: none; /* Hide badge on very small screens */
     }
     
     .login-btn {
-        padding: 6px 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        
+    }
+    
+    .login-btn span {
+        display: none; /* Hide text, show only icon */
     }
     
     .login-btn i {
-        font-size: 13px;
+        margin-right: 0;
+        font-size: 14px;
+    }
+    
+    .mobile-menu-toggle {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
     }
     
     .mobile-menu-panel {
