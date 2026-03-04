@@ -52,10 +52,21 @@ app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
 
 # ========== CREATE UPLOAD DIRECTORIES ==========
+# Check if running on Vercel
+if os.environ.get('VERCEL_ENV') == 'production':
+    # On Vercel, use /tmp directory
+    app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
+else:
+    # Local development - use static folder
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+
+# Create directories (now using correct path)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'products'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'avatars'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'reviews'), exist_ok=True)
+
+print(f"📁 Upload folder set to: {app.config['UPLOAD_FOLDER']}")
 
 # ========== INITIALIZE EXTENSIONS ==========
 db.init_app(app)
