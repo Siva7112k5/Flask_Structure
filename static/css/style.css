@@ -2698,7 +2698,247 @@ color: #344daf;
     background-color:#11537e ;
 }
 .add-to-cart-btn:hover { background-color: #d1b68b; }
+/* ========== MOBILE FILTER BUTTON & SIDEBAR ========== */
 
+/* Desktop Only Elements */
+.desktop-only {
+    display: block;
+}
+
+/* Mobile Filter Bar */
+.mobile-filter-bar {
+    display: none;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.mobile-filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.mobile-filter-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 30px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.3s;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.mobile-filter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.mobile-results-count {
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Sort Chips */
+.sort-chips {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 5px 0 10px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.sort-chips::-webkit-scrollbar {
+    display: none;
+}
+
+.sort-chip {
+    background: #f0f0f0;
+    color: #666;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.3s;
+    border: 1px solid transparent;
+}
+
+.sort-chip.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.sort-chip:hover {
+    background: #e0e0e0;
+}
+
+/* Mobile Filter Sidebar */
+.mobile-filter-sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 85%;
+    max-width: 320px;
+    height: 100vh;
+    background: white;
+    z-index: 1002;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-filter-sidebar.active {
+    left: 0;
+}
+
+.mobile-filter-sidebar .mobile-filter-header {
+    padding: 20px;
+    border-bottom: 1px solid #f0f0f0;
+    margin: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.mobile-filter-sidebar .mobile-filter-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 20px;
+}
+
+.close-filter {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: 0.3s;
+}
+
+.close-filter:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.mobile-filter-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.mobile-filter-actions {
+    padding: 20px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    gap: 10px;
+    background: white;
+}
+
+.mobile-clear {
+    flex: 1;
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+    margin: 0;
+}
+
+.mobile-apply {
+    flex: 2;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.mobile-apply:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Filter Overlay */
+.mobile-filter-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.mobile-filter-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Responsive Breakpoints */
+@media screen and (max-width: 768px) {
+    .desktop-filter {
+        display: none;
+    }
+    
+    .desktop-only {
+        display: none;
+    }
+    
+    .mobile-filter-bar {
+        display: block;
+    }
+    
+    .products-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .filters-sidebar {
+        position: static;
+        max-width: 100%;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .mobile-filter-btn {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+    
+    .sort-chip {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .mobile-results-count {
+        font-size: 13px;
+    }
+}
 /* ========== All Products Page - Enhanced Filters Sidebar ========== */
 
 /* Filters Sidebar Container */
@@ -3034,6 +3274,7 @@ color: #344daf;
 @media screen and (max-width: 480px) {
     .filters-sidebar {
         padding: 18px;
+       
     }
     
     .price-range {
@@ -3302,6 +3543,7 @@ color: #344daf;
 @media screen and (max-width: 480px) {
     .products-header {
         padding: 16px;
+        
     }
     
     .products-header h2 {

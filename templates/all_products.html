@@ -6,6 +6,73 @@
 
 <!-- Rest of your template -->
 <div class="products-page">
+        <!-- Mobile Filter Bar (Visible only on mobile) -->
+   <!-- Mobile Filter Bar (Visible only on mobile) -->
+<div class="mobile-filter-bar">
+    <div class="mobile-filter-header">
+        <button class="mobile-filter-btn" id="mobileFilterToggle">
+            <i class="fa-solid fa-sliders"></i>
+            <span>Filter & Sort</span>
+        </button>
+        <span class="mobile-results-count">{{ products|length }} products</span>
+    </div>
+    
+    <!-- Quick Sort Chips (Mobile) -->
+    <div class="sort-chips">
+        {% set current_sort = request.args.get('sort', 'newest') %}
+        
+        <button class="sort-chip {% if current_sort == 'newest' %}active{% endif %}" 
+                onclick="window.location.href='{{ url_for('all_products', sort='newest', 
+                    category=request.args.get('category'), 
+                    min_price=request.args.get('min_price'), 
+                    max_price=request.args.get('max_price'), 
+                    brand=request.args.get('brand'), 
+                    min_rating=request.args.get('min_rating')) }}'">
+            Newest
+        </button>
+        <button class="sort-chip {% if current_sort == 'price_low' %}active{% endif %}" 
+                onclick="window.location.href='{{ url_for('all_products', sort='price_low', 
+                    category=request.args.get('category'), 
+                    min_price=request.args.get('min_price'), 
+                    max_price=request.args.get('max_price'), 
+                    brand=request.args.get('brand'), 
+                    min_rating=request.args.get('min_rating')) }}'">
+            Price: Low
+        </button>
+        <button class="sort-chip {% if current_sort == 'price_high' %}active{% endif %}" 
+                onclick="window.location.href='{{ url_for('all_products', sort='price_high', 
+                    category=request.args.get('category'), 
+                    min_price=request.args.get('min_price'), 
+                    max_price=request.args.get('max_price'), 
+                    brand=request.args.get('brand'), 
+                    min_rating=request.args.get('min_rating')) }}'">
+            Price: High
+        </button>
+        <button class="sort-chip {% if current_sort == 'rating' %}active{% endif %}" 
+                onclick="window.location.href='{{ url_for('all_products', sort='rating', 
+                    category=request.args.get('category'), 
+                    min_price=request.args.get('min_price'), 
+                    max_price=request.args.get('max_price'), 
+                    brand=request.args.get('brand'), 
+                    min_rating=request.args.get('min_rating')) }}'">
+            Top Rated
+        </button>
+    </div>
+</div>
+
+    <!-- Desktop Products Header (Hidden on mobile) -->
+    <div class="products-header desktop-only">
+        <h2>All Products <span class="product-count">({{ products|length }} items)</span></h2>
+        <div class="sort-section">
+            <label>Sort by:</label>
+            <select id="sort-select">
+                <option value="newest" {% if filters.sort == 'newest' %}selected{% endif %}>Newest First</option>
+                <option value="price_low" {% if filters.sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                <option value="price_high" {% if filters.sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                <option value="rating" {% if filters.sort == 'rating' %}selected{% endif %}>Customer Rating</option>
+            </select>
+        </div>
+    </div>
     <div class="products-layout">
       <!-- Filters Sidebar -->
 <aside class="filters-sidebar">
@@ -94,7 +161,7 @@
 </aside>
         <!-- Products Grid -->
         <div class="products-content">
-            <div class="products-header">
+      <!--       <div class="products-header">
                 <h2>All Products <span class="product-count">({{ products|length }} items)</span></h2>
                 <div class="sort-section">
                     <label>Sort by:</label>
@@ -106,7 +173,7 @@
                     </select>
                 </div>
             </div>
-            
+             -->
             <div class="product-grid">
                 {% for product in products %}
                 <div class="product-card" onclick="location.href='{{ url_for('product_detail', product_id=product.id) }}'">
@@ -179,7 +246,361 @@
         </div>
     </div>
 </div>
+<style>
+    /* ========== Mobile Filter Sidebar - Flipkart Style ========== */
 
+/* Hide desktop filters sidebar on mobile */
+@media screen and (max-width: 768px) {
+    .filters-sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 85%;
+        max-width: 340px;
+        height: 100vh;
+        background: #fff;
+        z-index: 1000;
+        padding: 0;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+        transition: left 0.3s ease;
+        overflow-y: auto;
+        border: none;
+    }
+
+    .filters-sidebar.active {
+        left: 0;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Filter Header */
+    .filters-sidebar h3 {
+        position: sticky;
+        top: 0;
+        background: #fff;
+        margin: 0;
+        padding: 16px 18px;
+        border-bottom: 1px solid #f0f0f0;
+        z-index: 2;
+        font-size: 18px;
+    }
+
+    .filters-sidebar h3::before {
+        content: none;
+    }
+
+    /* Close Button */
+    .filters-sidebar h3::after {
+        content: '✕';
+        position: absolute;
+        right: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 18px;
+        color: #666;
+        cursor: pointer;
+    }
+
+    /* Filter Sections */
+    .filter-section {
+        margin: 0;
+        padding: 16px 18px;
+        border-bottom: 8px solid #f5f5f5;
+    }
+
+    .filter-section:last-of-type {
+        border-bottom: 8px solid #f5f5f5;
+    }
+
+    .filter-section h4 {
+        margin-bottom: 15px;
+        font-size: 14px;
+        color: #212121;
+        font-weight: 600;
+    }
+
+    .filter-section h4::after {
+        content: none;
+    }
+
+    /* Filter Options */
+    .filter-options {
+        max-height: none;
+        padding-right: 0;
+        gap: 12px;
+    }
+
+    /* Radio Button Styling for Mobile */
+    .filter-radio {
+        padding: 0;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        gap: 12px;
+        font-size: 14px;
+        color: #212121;
+        transform: none !important;
+    }
+
+    .filter-radio:hover {
+        background: transparent;
+        border-color: transparent;
+        transform: none !important;
+    }
+
+    .filter-radio input[type="radio"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #9c5960;
+    }
+
+    .filter-radio input[type="radio"]:checked {
+        transform: none;
+    }
+
+    /* Checkbox Styling for Mobile */
+    .filter-checkbox {
+        padding: 0;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        gap: 12px;
+        transform: none !important;
+    }
+
+    .filter-checkbox:hover {
+        background: transparent;
+        border-color: transparent;
+        transform: none !important;
+        box-shadow: none;
+    }
+
+    .filter-checkbox input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #9c5960;
+    }
+
+    .filter-checkbox input[type="checkbox"]:checked {
+        transform: none;
+    }
+
+    /* Price Range Section */
+    .price-range {
+        background: transparent;
+        padding: 0;
+        border: none;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .price-range input[type="number"] {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .price-range span {
+        width: 100%;
+        text-align: center;
+        color: #666;
+        font-size: 14px;
+        padding: 0;
+    }
+
+    .price-range input[type="number"]:focus {
+        transform: none;
+        border-color: #9c5960;
+    }
+
+    /* Apply Price Button */
+    .apply-price {
+        margin-top: 8px;
+        padding: 14px;
+        font-size: 14px;
+        background: #9c5960;
+        border-radius: 6px;
+        box-shadow: none;
+    }
+
+    .apply-price:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* Clear All Button */
+    .clear-filters {
+        margin: 18px;
+        width: calc(100% - 36px);
+        padding: 14px;
+        font-size: 14px;
+        background: #fff;
+        color: #9c5960;
+        border: 2px solid #9c5960;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    .clear-filters:hover {
+        transform: none;
+        box-shadow: none;
+        background: #9c5960;
+        color: #fff;
+    }
+
+    /* Hide scrollbar hint on mobile */
+    .filter-options::after {
+        display: none;
+    }
+
+    /* Hide scrollbar custom styling on mobile */
+    .filter-options::-webkit-scrollbar,
+    .categories-list::-webkit-scrollbar,
+    .brands-list::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Overlay for when filter is open */
+    .filter-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+
+    .filter-overlay.active {
+        display: block;
+    }
+}
+
+/* Small Mobile Devices */
+@media screen and (max-width: 480px) {
+    .filters-sidebar {
+        width: 90%;
+    }
+    
+    .filter-section {
+        padding: 14px 16px;
+    }
+    
+    .filter-radio,
+    .filter-checkbox {
+        font-size: 13px;
+    }
+    
+    .price-range input[type="number"] {
+        padding: 10px;
+        font-size: 13px;
+    }
+    
+    .apply-price,
+    .clear-filters {
+        padding: 12px;
+        font-size: 13px;
+    }
+}
+</style>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Create overlay if it doesn't exist
+    if (!document.querySelector('.filter-overlay')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'filter-overlay';
+        document.body.appendChild(overlay);
+    }
+
+    const filterToggle = document.getElementById('mobileFilterToggle');
+    const filterSidebar = document.querySelector('.filters-sidebar');
+    const overlay = document.querySelector('.filter-overlay');
+    const closeBtn = document.querySelector('.filters-sidebar h3');
+
+    if (filterToggle && filterSidebar) {
+        // Open filter
+        filterToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            filterSidebar.classList.add('active');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        });
+
+        // Close filter (overlay click)
+        overlay.addEventListener('click', function() {
+            filterSidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+
+        // Close filter (close button click)
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function(e) {
+                if (e.target === closeBtn || e.target.parentElement === closeBtn) {
+                    filterSidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+    }
+
+    // Handle radio button changes - auto submit
+    const radioButtons = document.querySelectorAll('.filter-radio input[type="radio"]');
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                // Close sidebar on mobile after selection (optional)
+                if (window.innerWidth <= 768) {
+                    filterSidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+                // Submit filter form or update URL
+                updateFilters();
+            }
+        });
+    });
+
+    // Function to update filters (implement based on your URL structure)
+    function updateFilters() {
+        const form = document.createElement('form');
+        form.method = 'GET';
+        form.action = window.location.pathname;
+        
+        // Get all filter values
+        const category = document.querySelector('input[name="category"]:checked')?.value;
+        const brand = document.querySelector('input[name="brand"]:checked')?.value;
+        const rating = document.querySelector('input[name="rating"]:checked')?.value;
+        const minPrice = document.getElementById('min-price')?.value;
+        const maxPrice = document.getElementById('max-price')?.value;
+        
+        // Add filters to form
+        if (category) addField(form, 'category', category);
+        if (brand) addField(form, 'brand', brand);
+        if (rating) addField(form, 'min_rating', rating);
+        if (minPrice) addField(form, 'min_price', minPrice);
+        if (maxPrice) addField(form, 'max_price', maxPrice);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function addField(form, name, value) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+    }
+});
+</script>
 <style>
 /* Additional styles */
 .products-header h2 {
@@ -285,6 +706,119 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.querySelector('.clear-filters').addEventListener('click', function() {
         window.location.href = '/products';
+    });
+});
+</script>
+<script>
+    // ========== MOBILE FILTER FUNCTIONALITY ==========
+
+document.addEventListener('DOMContentLoaded', function() {
+    const filterToggle = document.getElementById('mobileFilterToggle');
+    const filterSidebar = document.getElementById('mobileFilterSidebar');
+    const filterOverlay = document.getElementById('mobileFilterOverlay');
+    const closeFilter = document.getElementById('closeFilterBtn');
+    const applyFilters = document.getElementById('mobileApplyFilters');
+    
+    function openMobileFilter() {
+        filterSidebar.classList.add('active');
+        filterOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeMobileFilter() {
+        filterSidebar.classList.remove('active');
+        filterOverlay.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+    
+    if (filterToggle) {
+        filterToggle.addEventListener('click', openMobileFilter);
+    }
+    
+    if (closeFilter) {
+        closeFilter.addEventListener('click', closeMobileFilter);
+    }
+    
+    if (filterOverlay) {
+        filterOverlay.addEventListener('click', closeMobileFilter);
+    }
+    
+    // Apply filters from mobile sidebar
+    if (applyFilters) {
+        applyFilters.addEventListener('click', function() {
+            // Collect filter values from mobile sidebar
+            const categories = Array.from(document.querySelectorAll('input[name="mobile_category"]:checked'))
+                .map(cb => cb.value);
+            const minPrice = document.getElementById('mobile-min-price').value;
+            const maxPrice = document.getElementById('mobile-max-price').value;
+            const brands = Array.from(document.querySelectorAll('input[name="mobile_brand"]:checked'))
+                .map(cb => cb.value);
+            const ratings = Array.from(document.querySelectorAll('input[name="mobile_rating"]:checked'))
+                .map(cb => cb.value);
+            
+            // Build URL with filters
+            let url = '/products?';
+            const params = [];
+            
+            if (categories.length) params.push('category=' + encodeURIComponent(categories[0]));
+            if (minPrice) params.push('min_price=' + encodeURIComponent(minPrice));
+            if (maxPrice) params.push('max_price=' + encodeURIComponent(maxPrice));
+            if (brands.length) params.push('brand=' + encodeURIComponent(brands[0]));
+            if (ratings.length) params.push('min_rating=' + encodeURIComponent(ratings[0]));
+            
+            // Get current sort
+            const activeSort = document.querySelector('.sort-chip.active');
+            if (activeSort) {
+                const sortValue = activeSort.textContent.toLowerCase().replace(' ', '_');
+                if (sortValue === 'price:low') params.push('sort=price_low');
+                else if (sortValue === 'price:high') params.push('sort=price_high');
+                else if (sortValue === 'toprated') params.push('sort=rating');
+                else params.push('sort=newest');
+            }
+            
+            window.location.href = url + params.join('&');
+        });
+    }
+    
+    // Sync mobile checkboxes with desktop on load (if needed)
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Sync categories
+    const categoryParam = urlParams.get('category');
+    if (categoryParam) {
+        document.querySelectorAll('input[name="mobile_category"]').forEach(cb => {
+            cb.checked = cb.value === categoryParam;
+        });
+    }
+    
+    // Sync brands
+    const brandParam = urlParams.get('brand');
+    if (brandParam) {
+        document.querySelectorAll('input[name="mobile_brand"]').forEach(cb => {
+            cb.checked = cb.value === brandParam;
+        });
+    }
+    
+    // Sync ratings
+    const ratingParam = urlParams.get('min_rating');
+    if (ratingParam) {
+        document.querySelectorAll('input[name="mobile_rating"]').forEach(cb => {
+            cb.checked = cb.value === ratingParam;
+        });
+    }
+    
+    // Sync price
+    const minPrice = urlParams.get('min_price');
+    const maxPrice = urlParams.get('max_price');
+    if (minPrice) document.getElementById('mobile-min-price').value = minPrice;
+    if (maxPrice) document.getElementById('mobile-max-price').value = maxPrice;
+});
+
+// Handle sort chip clicks
+document.querySelectorAll('.sort-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+        document.querySelectorAll('.sort-chip').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
     });
 });
 </script>
