@@ -79,25 +79,27 @@
                 {% endif %}
             </div>
 
-            <!-- Image Upload Section -->
-            <div class="image-upload-section">
-                <label class="section-label">
-                    <i class="fa-regular fa-image"></i>
-                    Add Photos (Optional)
-                </label>
-                <div class="upload-area" id="uploadArea">
-                    <input type="file" name="images" id="imageInput" multiple accept="image/*" style="display: none;">
-                    <div class="upload-placeholder" onclick="document.getElementById('imageInput').click()">
-                        <i class="fa-regular fa-cloud-upload"></i>
-                        <p>Click to upload or drag and drop</p>
-                        <span>PNG, JPG, GIF up to 5MB each</span>
-                    </div>
-                    <div class="image-preview-container" id="imagePreviewContainer"></div>
-                </div>
-                {% if form.images.errors %}
-                    <span class="error-message">{{ form.images.errors[0] }}</span>
-                {% endif %}
-            </div>
+          <!-- Image Upload Section -->
+<div class="image-upload-section">
+    <label class="section-label">
+        <i class="fa-regular fa-image"></i>
+        {{ form.images.label.text }}
+    </label>
+    <div class="upload-area" id="uploadArea">
+        <!-- ✅ CORRECT: Use the WTForms field properly -->
+        {{ form.images(class="file-input-hidden", id="imageInput", multiple=True, accept="image/*", style="display: none;") }}
+        
+        <div class="upload-placeholder" onclick="document.getElementById('imageInput').click()">
+            <i class="fa-regular fa-cloud-upload"></i>
+            <p>Click to upload or drag and drop</p>
+            <span>PNG, JPG, GIF up to 5MB each</span>
+        </div>
+        <div class="image-preview-container" id="imagePreviewContainer"></div>
+    </div>
+    {% if form.images.errors %}
+        <span class="error-message">{{ form.images.errors[0] }}</span>
+    {% endif %}
+</div>
 
             <!-- Action Buttons -->
             <div class="form-actions-modern">

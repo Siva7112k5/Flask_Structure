@@ -1,11 +1,12 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField, RadioField, BooleanField  # Add BooleanField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField, RadioField, BooleanField
+from flask_wtf.file import MultipleFileField, FileAllowed  # Add these imports
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
-    remember = BooleanField('Remember Me')  # ← ADD THIS LINE
+    remember = BooleanField('Remember Me')
     submit = SubmitField('Login')
 
 class RegisterForm(FlaskForm):
@@ -30,7 +31,11 @@ class ReviewForm(FlaskForm):
         Length(min=10, max=500, message='Review must be between 10 and 500 characters')
     ])
     
-    # NEW: Multiple image upload field
-    images = RadioField('images')  # You may need to adjust this based on your needs
+    # ✅ Fixed: Changed to MultipleFileField for image uploads
+    images = MultipleFileField('Add Photos (Optional)', 
+                              validators=[
+                                  FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 
+                                            'Only image files are allowed!')
+                              ])
     
     submit = SubmitField('Submit Review')
