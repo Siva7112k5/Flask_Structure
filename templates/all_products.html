@@ -4,59 +4,132 @@
 
 
 
-<!-- Rest of your template -->
-<div class="products-page">
-        <!-- Mobile Filter Bar (Visible only on mobile) -->
-   <!-- Mobile Filter Bar (Visible only on mobile) -->
-<div class="mobile-filter-bar">
-    <div class="mobile-filter-header">
-        <button class="mobile-filter-btn" id="mobileFilterToggle">
-            <i class="fa-solid fa-sliders"></i>
-            <span>Filter & Sort</span>
-        </button>
-        <span class="mobile-results-count">{{ products|length }} products</span>
-    </div>
-    
-    <!-- Quick Sort Chips (Mobile) -->
-    <div class="sort-chips">
-        {% set current_sort = request.args.get('sort', 'newest') %}
+<!-- Filter Sidebar Modal -->
+<div id="filterSidebar" class="filter-sidebar-modal" style="display: none;">
+    <div class="filter-sidebar-content">
+        <div class="filter-sidebar-header">
+            <h3>Filters</h3>
+            <button class="close-filter-btn" onclick="closeFilterSidebar()">
+                <i class="fa-regular fa-times"></i>
+            </button>
+        </div>
         
-        <button class="sort-chip {% if current_sort == 'newest' %}active{% endif %}" 
-                onclick="window.location.href='{{ url_for('all_products', sort='newest', 
-                    category=request.args.get('category'), 
-                    min_price=request.args.get('min_price'), 
-                    max_price=request.args.get('max_price'), 
-                    brand=request.args.get('brand'), 
-                    min_rating=request.args.get('min_rating')) }}'">
-            Newest
+        <div class="filter-sidebar-body">
+            <!-- Categories -->
+            <div class="filter-section">
+                <h4>Categories</h4>
+                <div class="filter-options">
+                    {% for category in categories %}
+                    <label class="filter-option">
+                        <input type="checkbox" name="category" value="{{ category }}" 
+                               {% if category in request.args.getlist('category') %}checked{% endif %}>
+                        <span>{{ category }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Price Range -->
+            <div class="filter-section">
+                <h4>Price Range</h4>
+                <div class="price-range-inputs">
+                    <input type="number" id="min-price" placeholder="Min" value="{{ request.args.get('min_price', '') }}">
+                    <span>to</span>
+                    <input type="number" id="max-price" placeholder="Max" value="{{ request.args.get('max_price', '') }}">
+                </div>
+            </div>
+            
+            <!-- Brands -->
+            <div class="filter-section">
+                <h4>Brands</h4>
+                <div class="filter-options">
+                    {% for brand in brands %}
+                    <label class="filter-option">
+                        <input type="checkbox" name="brand" value="{{ brand }}"
+                               {% if brand in request.args.getlist('brand') %}checked{% endif %}>
+                        <span>{{ brand }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Rating -->
+            <div class="filter-section">
+                <h4>Customer Rating</h4>
+                <div class="rating-filters">
+                    <label class="rating-option">
+                        <input type="radio" name="rating" value="4" {% if request.args.get('rating') == '4' %}checked{% endif %}>
+                        <span>4★ & above</span>
+                    </label>
+                    <label class="rating-option">
+                        <input type="radio" name="rating" value="3" {% if request.args.get('rating') == '3' %}checked{% endif %}>
+                        <span>3★ & above</span>
+                    </label>
+                    <label class="rating-option">
+                        <input type="radio" name="rating" value="2" {% if request.args.get('rating') == '2' %}checked{% endif %}>
+                        <span>2★ & above</span>
+                    </label>
+                    <label class="rating-option">
+                        <input type="radio" name="rating" value="1" {% if request.args.get('rating') == '1' %}checked{% endif %}>
+                        <span>1★ & above</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="filter-sidebar-footer">
+            <button class="clear-filters" onclick="clearAllFilters()">Clear All</button>
+            <button class="apply-filters" onclick="applyFilters()">Apply Filters</button>
+        </div>
+    </div>
+</div>
+<!-- Mobile Header - Add this after filters sidebar -->
+<div class="mobile-header">
+    <div class="mobile-header-top">
+        <h2>All Products <span class="product-count">{{ products|length }} items</span></h2>
+    </div>
+    <div class="mobile-filter-sort-bar">
+        <button class="mobile-filter-btn" onclick="openFilterSidebar()">
+            <i class="fa-regular fa-sliders"></i> Filter
         </button>
-        <button class="sort-chip {% if current_sort == 'price_low' %}active{% endif %}" 
-                onclick="window.location.href='{{ url_for('all_products', sort='price_low', 
-                    category=request.args.get('category'), 
-                    min_price=request.args.get('min_price'), 
-                    max_price=request.args.get('max_price'), 
-                    brand=request.args.get('brand'), 
-                    min_rating=request.args.get('min_rating')) }}'">
-            Price: Low
+        <button class="mobile-sort-btn" onclick="openSortBottomSheet()">
+            <i class="fa-regular fa-arrow-up-wide-short"></i> Sort by <span id="selected-sort">Newest First</span>
         </button>
-        <button class="sort-chip {% if current_sort == 'price_high' %}active{% endif %}" 
-                onclick="window.location.href='{{ url_for('all_products', sort='price_high', 
-                    category=request.args.get('category'), 
-                    min_price=request.args.get('min_price'), 
-                    max_price=request.args.get('max_price'), 
-                    brand=request.args.get('brand'), 
-                    min_rating=request.args.get('min_rating')) }}'">
-            Price: High
+        <button class="mobile-compare-btn">
+            <i class="fa-regular fa-code-compare"></i> Compare
         </button>
-        <button class="sort-chip {% if current_sort == 'rating' %}active{% endif %}" 
-                onclick="window.location.href='{{ url_for('all_products', sort='rating', 
-                    category=request.args.get('category'), 
-                    min_price=request.args.get('min_price'), 
-                    max_price=request.args.get('max_price'), 
-                    brand=request.args.get('brand'), 
-                    min_rating=request.args.get('min_rating')) }}'">
-            Top Rated
+        <button class="mobile-ram-btn">
+            <i class="fa-regular fa-microchip"></i> RAM ▼
         </button>
+    </div>
+</div>
+<!-- Sort Bottom Sheet -->
+<div id="sortBottomSheet" class="sort-bottom-sheet" style="display: none;">
+    <div class="sort-sheet-content">
+        <div class="sort-sheet-header">
+            <h3>Sort by</h3>
+            <button class="close-sort-btn" onclick="closeSortBottomSheet()">
+                <i class="fa-regular fa-times"></i>
+            </button>
+        </div>
+        <div class="sort-sheet-body">
+            <div class="sort-option" data-sort="newest" onclick="selectSort('newest', 'Newest')">
+                <span>Newest First</span>
+                {% if filters.sort == 'newest' %}<i class="fa-regular fa-check"></i>{% endif %}
+            </div>
+            <div class="sort-option" data-sort="price_low" onclick="selectSort('price_low', 'Price Low')">
+                <span>Price: Low to High</span>
+                {% if filters.sort == 'price_low' %}<i class="fa-regular fa-check"></i>{% endif %}
+            </div>
+            <div class="sort-option" data-sort="price_high" onclick="selectSort('price_high', 'Price High')">
+                <span>Price: High to Low</span>
+                {% if filters.sort == 'price_high' %}<i class="fa-regular fa-check"></i>{% endif %}
+            </div>
+            <div class="sort-option" data-sort="rating" onclick="selectSort('rating', 'Rating')">
+                <span>Customer Rating</span>
+                {% if filters.sort == 'rating' %}<i class="fa-regular fa-check"></i>{% endif %}
+            </div>
+        </div>
     </div>
 </div>
 
@@ -174,65 +247,73 @@
                 </div>
             </div>
              -->
-            <div class="product-grid">
-                {% for product in products %}
-                <div class="product-card" onclick="location.href='{{ url_for('product_detail', product_id=product.id) }}'">
-                    <div class="product-image">
-                        <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
-                        {% if product.discount > 0 %}
-                        <span class="discount-badge">{{ product.discount }}% OFF</span>
+<div class="product-grid">
+    {% for product in products %}
+    <!-- Product Card - Mobile Optimized -->
+    <div class="product-card">
+        <!-- DESKTOP Wishlist Button (Left side) -->
+        <button class="wishlist-btn desktop-wishlist {% if product.id in user_wishlist_ids %}active{% endif %}" 
+                onclick="toggleWishlist({{ product.id }}, event)"
+                data-product-id="{{ product.id }}">
+            <i class="fa-{% if product.id in user_wishlist_ids %}solid{% else %}regular{% endif %} fa-heart"></i>
+        </button>
+        
+        <!-- MOBILE Wishlist Button (Top Right) -->
+        <button class="wishlist-btn-mobile {% if product.id in user_wishlist_ids %}active{% endif %}" 
+                onclick="toggleWishlist({{ product.id }}, event)"
+                data-product-id="{{ product.id }}">
+            <i class="fa-{% if product.id in user_wishlist_ids %}solid{% else %}regular{% endif %} fa-heart"></i>
+        </button>
+        
+        <!-- Product Image (Clickable) -->
+        <div class="product-image" onclick="location.href='{{ url_for('product_detail', product_id=product.id) }}'">
+            <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}">
+            {% if product.discount > 0 %}
+            <span class="discount-badge">{{ product.discount }}% OFF</span>
+            {% endif %}
+        </div>
+        
+        <!-- Product Info -->
+        <div class="product-info">
+            <h3 class="product-title" onclick="location.href='{{ url_for('product_detail', product_id=product.id) }}'">{{ product.name }}</h3>
+            
+            <!-- Rating -->
+            <div class="rating">
+                <span class="stars">
+                    {% for i in range(5) %}
+                        {% if i < product.rating|int %}
+                            ★
+                        {% else %}
+                            ☆
                         {% endif %}
-                    </div>
-<!-- Default Style (White with gradient hover) -->
-<button class="quick-view-btn" onclick="quickView({{ product.id }}, event)">
-    <i class="fa-regular fa-eye"></i> Quick View
-</button>
-
-<!-- Minimal Style -->
-<button class="quick-view-btn minimal" onclick="quickView({{ product.id }}, event)">
-    <i class="fa-regular fa-eye"></i> Quick View
-</button>
-
-<!-- Solid Dark Style -->
-<button class="quick-view-btn solid" onclick="quickView({{ product.id }}, event)">
-    <i class="fa-regular fa-eye"></i> Quick View
-</button>
-
-
-<button class="wishlist-btn {% if product.id in user_wishlist_ids %}active{% endif %}" 
-        onclick="toggleWishlist({{ product.id }}, event)"
-        data-product-id="{{ product.id }}">
-    <i class="fa-{% if product.id in user_wishlist_ids %}solid{% else %}regular{% endif %} fa-heart"></i>
-</button>
-                    <div class="product-info">
-                        <h3>{{ product.name }}</h3>
-                        <div class="rating">
-                            <span class="stars">
-                                {% for i in range(5) %}
-                                    {% if i < product.rating|int %}
-                                        ★
-                                    {% else %}
-                                        ☆
-                                    {% endif %}
-                                {% endfor %}
-                            </span>
-                            <span class="rating-count">({{ product.reviews_count }})</span>
-                        </div>
-                        <div class="price">
-                            <span class="current">₹{{ product.price }}</span>
-                            {% if product.compare_price and product.compare_price > product.price %}
-                            <span class="original">₹{{ product.compare_price }}</span>
-                            <span class="discount">{{ ((product.compare_price - product.price) / product.compare_price * 100)|int }}% OFF</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% else %}
-                <div class="no-products">
-                    <p>No products found matching your filters.</p>
-                </div>
-                {% endfor %}
+                    {% endfor %}
+                </span>
+                <span class="rating-count">({{ product.reviews_count }})</span>
             </div>
+            
+            <!-- Price -->
+            <div class="price">
+                <span class="current">₹{{ product.price }}</span>
+                {% if product.compare_price and product.compare_price > product.price %}
+                <span class="original">₹{{ product.compare_price }}</span>
+                <span class="discount">{{ ((product.compare_price - product.price) / product.compare_price * 100)|int }}% OFF</span>
+                {% endif %}
+            </div>
+            
+            <!-- Single Quick View Button (NOT 3!) -->
+            <button class="quick-view-btn" onclick="quickView({{ product.id }}, event)">
+                <i class="fa-regular fa-eye"></i> Quick View
+            </button>
+        </div>
+    </div>
+    {% else %}
+    <div class="no-products">
+        <i class="fa-regular fa-box-open"></i>
+        <p>No products found matching your filters.</p>
+        <button onclick="clearFilters()" class="clear-filters-btn">Clear Filters</button>
+    </div>
+    {% endfor %}
+</div>
         </div>
     </div>
     
@@ -509,6 +590,178 @@
 </style>
 
 
+
+<!-- Mobile Sort Options Modal (Hidden by default) -->
+<div id="sortModal" class="mobile-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Sort By</h3>
+            <button onclick="closeSortModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="sort-option" onclick="applySort('newest')">
+                <span>Newest First</span>
+                <i class="fa-regular fa-clock"></i>
+            </div>
+            <div class="sort-option" onclick="applySort('price_low')">
+                <span>Price: Low to High</span>
+                <i class="fa-regular fa-arrow-up-1-9"></i>
+            </div>
+            <div class="sort-option" onclick="applySort('price_high')">
+                <span>Price: High to Low</span>
+                <i class="fa-regular fa-arrow-down-9-1"></i>
+            </div>
+            <div class="sort-option" onclick="applySort('rating')">
+                <span>Customer Rating</span>
+                <i class="fa-regular fa-star"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleFilters() {
+    // Show filters sidebar as modal on mobile
+    const sidebar = document.querySelector('.filters-sidebar');
+    sidebar.style.display = 'block';
+    sidebar.style.position = 'fixed';
+    sidebar.style.top = '0';
+    sidebar.style.left = '0';
+    sidebar.style.width = '280px';
+    sidebar.style.height = '100%';
+    sidebar.style.zIndex = '1001';
+    sidebar.style.overflowY = 'auto';
+    sidebar.style.animation = 'slideIn 0.3s ease';
+    
+    // Add overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+    `;
+    overlay.onclick = closeFilters;
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+}
+
+function closeFilters() {
+    const sidebar = document.querySelector('.filters-sidebar');
+    sidebar.style.display = 'none';
+    document.getElementById('modal-overlay')?.remove();
+    document.body.style.overflow = 'auto';
+}
+
+function toggleSortOptions() {
+    document.getElementById('sortModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSortModal() {
+    document.getElementById('sortModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function applySort(value) {
+    document.getElementById('sort-select').value = value;
+    document.getElementById('sort-select').dispatchEvent(new Event('change'));
+    closeSortModal();
+}
+
+// Add this CSS
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(-100%); }
+        to { transform: translateX(0); }
+    }
+    
+    .mobile-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: flex-end;
+        z-index: 1001;
+        animation: fadeIn 0.3s;
+    }
+    
+    .mobile-modal .modal-content {
+        background: white;
+        width: 100%;
+        border-radius: 20px 20px 0 0;
+        animation: slideUp 0.3s;
+    }
+    
+    .mobile-modal .modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .mobile-modal .modal-header h3 {
+        font-size: 18px;
+        font-weight: 500;
+        margin: 0;
+    }
+    
+    .mobile-modal .modal-header button {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+    }
+    
+    .mobile-modal .modal-body {
+        padding: 10px 0;
+    }
+    
+    .sort-option {
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #f5f5f5;
+        cursor: pointer;
+    }
+    
+    .sort-option:active {
+        background: #f5f5f5;
+    }
+    
+    .sort-option span {
+        font-size: 16px;
+        color: #212121;
+    }
+    
+    .sort-option i {
+        color: #2874f0;
+        font-size: 18px;
+    }
+    
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+`;
+document.head.appendChild(style);
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Create overlay if it doesn't exist
@@ -1418,5 +1671,446 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Quick view and cart functionality loaded');
 });
 </script>
+<script>
+// ========== FILTER SIDEBAR FUNCTIONS ==========
+function openFilterSidebar() {
+    document.getElementById('filterSidebar').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
 
+function closeFilterSidebar() {
+    document.getElementById('filterSidebar').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Close when clicking outside
+document.addEventListener('click', function(e) {
+    const sidebar = document.getElementById('filterSidebar');
+    if (sidebar && sidebar.style.display === 'flex') {
+        if (e.target === sidebar) {
+            closeFilterSidebar();
+        }
+    }
+});
+
+// ========== SORT BOTTOM SHEET FUNCTIONS ==========
+function openSortBottomSheet() {
+    document.getElementById('sortBottomSheet').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSortBottomSheet() {
+    document.getElementById('sortBottomSheet').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Close when clicking outside
+document.addEventListener('click', function(e) {
+    const sheet = document.getElementById('sortBottomSheet');
+    if (sheet && sheet.style.display === 'flex') {
+        if (e.target === sheet) {
+            closeSortBottomSheet();
+        }
+    }
+});
+
+// ========== SORT SELECTION ==========
+function selectSort(sortValue, sortLabel) {
+    document.getElementById('sort-select').value = sortValue;
+    document.getElementById('selected-sort').textContent = sortLabel;
+    document.getElementById('sort-select').dispatchEvent(new Event('change'));
+    closeSortBottomSheet();
+    
+    // Show checkmark on selected option
+    document.querySelectorAll('.sort-option i').forEach(i => i.style.display = 'none');
+    event.currentTarget.querySelector('i').style.display = 'block';
+}
+
+// ========== FILTER APPLY ==========
+function applyFilters() {
+    const categories = [];
+    document.querySelectorAll('input[name="category"]:checked').forEach(cb => {
+        categories.push(cb.value);
+    });
+    
+    let url = new URL(window.location.href);
+    url.searchParams.delete('category');
+    categories.forEach(cat => url.searchParams.append('category', cat));
+    
+    window.location.href = url.toString();
+}
+
+function clearAllFilters() {
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+}
+
+// ========== WISHLIST FUNCTION ==========
+function toggleWishlist(productId, event) {
+    event.stopPropagation();
+    const btn = event.currentTarget;
+    
+    fetch(`/api/wishlist/toggle/${productId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            btn.classList.toggle('active');
+            const icon = btn.querySelector('i');
+            if (btn.classList.contains('active')) {
+                icon.classList.remove('fa-regular');
+                icon.classList.add('fa-solid');
+            } else {
+                icon.classList.remove('fa-solid');
+                icon.classList.add('fa-regular');
+            }
+        }
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Set initial sort label
+    const sortSelect = document.getElementById('sort-select');
+    const sortLabel = document.getElementById('selected-sort');
+    
+    if (sortSelect && sortLabel) {
+        const selectedOption = sortSelect.options[sortSelect.selectedIndex];
+        if (selectedOption) {
+            sortLabel.textContent = selectedOption.text;
+        }
+    }
+});
+</script>
+<script>
+// ========== GLOBAL VARIABLES ==========
+let quickViewModal = null;
+
+// ========== QUICK VIEW FUNCTIONALITY ==========
+window.quickView = function(productId, event) {
+    if (event) event.stopPropagation();
+    
+    // Create modal if it doesn't exist
+    if (!quickViewModal) {
+        createQuickViewModal();
+        quickViewModal = document.getElementById('quickViewModal');
+    }
+    
+    const content = document.getElementById('quickViewContent');
+    if (!content) return;
+    
+    // Show modal
+    quickViewModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Show loading
+    content.innerHTML = `
+        <div class="quick-view-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Loading product details...</p>
+        </div>
+    `;
+    
+    // Fetch product
+    fetch(`/api/product/${productId}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Product not found');
+            return response.json();
+        })
+        .then(product => {
+            content.innerHTML = `
+                <div class="quick-view-grid">
+                    <div class="quick-view-image">
+                        <img src="${product.image}" alt="${product.name}">
+                    </div>
+                    <div class="quick-view-details">
+                        <h2>${product.name}</h2>
+                        <div class="quick-view-rating">
+                            <span class="stars">${'★'.repeat(Math.floor(product.rating))}${'☆'.repeat(5 - Math.floor(product.rating))}</span>
+                            <span>(${product.reviews} reviews)</span>
+                        </div>
+                        <div class="quick-view-price">
+                            <span class="current-price">₹${product.price}</span>
+                            ${product.compare_price ? `<span class="original-price">₹${product.compare_price}</span>` : ''}
+                        </div>
+                        <p class="quick-view-description">${product.description || product.short_description || 'No description available.'}</p>
+                        <div class="quick-view-actions">
+                            <button class="quick-view-add-to-cart" onclick="addToCart(${product.id})">
+                                <i class="fa-solid fa-cart-plus"></i> Add to Cart
+                            </button>
+                            <button class="quick-view-details-btn" onclick="window.location.href='/product/${product.id}'">
+                                View Full Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            content.innerHTML = `
+                <div class="quick-view-error">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <p>Failed to load product details.</p>
+                    <button onclick="closeQuickView()">Close</button>
+                </div>
+            `;
+        });
+};
+
+window.createQuickViewModal = function() {
+    const modalHTML = `
+        <div id="quickViewModal" class="quick-view-modal" style="display: none;">
+            <div class="quick-view-modal-content">
+                <div class="quick-view-modal-header">
+                    <h3>Quick View</h3>
+                    <button class="quick-view-close" onclick="closeQuickView()">&times;</button>
+                </div>
+                <div class="quick-view-modal-body" id="quickViewContent"></div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+};
+
+window.closeQuickView = function() {
+    const modal = document.getElementById('quickViewModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+};
+
+// ========== CART FUNCTIONALITY ==========
+window.addToCart = function(productId) {
+    const button = event?.target?.closest('button');
+    const originalHTML = button ? button.innerHTML : '';
+    
+    if (button) {
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Adding...';
+        button.disabled = true;
+    }
+    
+    fetch(`/add-to-cart/${productId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: 1 })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update cart count
+            document.querySelectorAll('.cart-count').forEach(el => {
+                el.textContent = data.cart_count;
+                el.classList.add('cart-updated');
+                setTimeout(() => el.classList.remove('cart-updated'), 500);
+            });
+            
+            // Show notification
+            showNotification('✅ Added to cart!', 'success');
+            
+            // Close quick view if open
+            closeQuickView();
+        }
+    })
+    .catch(error => {
+        showNotification('❌ Failed to add to cart', 'error');
+    })
+    .finally(() => {
+        if (button) {
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+        }
+    });
+};
+
+// ========== NOTIFICATION SYSTEM ==========
+window.showNotification = function(message, type = 'success') {
+    let container = document.getElementById('notification-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notification-container';
+        container.style.cssText = 'position:fixed; top:20px; right:20px; z-index:10000;';
+        document.body.appendChild(container);
+    }
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        background: ${type === 'success' ? '#4CAF50' : '#f44336'};
+        color: white; padding: 12px 24px; border-radius: 4px;
+        margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        cursor: pointer; animation: slideIn 0.3s ease;
+    `;
+    notification.textContent = message;
+    notification.onclick = () => notification.remove();
+    
+    container.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+};
+
+// ========== FILTER SIDEBAR FUNCTIONS ==========
+window.openFilterSidebar = function() {
+    const sidebar = document.getElementById('filterSidebar');
+    if (sidebar) {
+        sidebar.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+};
+
+window.closeFilterSidebar = function() {
+    const sidebar = document.getElementById('filterSidebar');
+    if (sidebar) {
+        sidebar.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+};
+
+// ========== SORT BOTTOM SHEET FUNCTIONS ==========
+window.openSortBottomSheet = function() {
+    const sheet = document.getElementById('sortBottomSheet');
+    if (sheet) {
+        sheet.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+};
+
+window.closeSortBottomSheet = function() {
+    const sheet = document.getElementById('sortBottomSheet');
+    if (sheet) {
+        sheet.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+};
+
+// ========== SORT SELECTION ==========
+window.selectSort = function(sortValue, sortLabel) {
+    const sortSelect = document.getElementById('sort-select');
+    const selectedSpan = document.getElementById('selected-sort');
+    
+    if (sortSelect) sortSelect.value = sortValue;
+    if (selectedSpan) selectedSpan.textContent = sortLabel;
+    
+    // Trigger change event
+    if (sortSelect) {
+        const event = new Event('change', { bubbles: true });
+        sortSelect.dispatchEvent(event);
+    }
+    
+    closeSortBottomSheet();
+};
+
+// ========== FILTER APPLY ==========
+window.applyFilters = function() {
+    const categories = [];
+    document.querySelectorAll('input[name="category"]:checked').forEach(cb => {
+        categories.push(cb.value);
+    });
+    
+    const url = new URL(window.location.href);
+    url.searchParams.delete('category');
+    categories.forEach(cat => url.searchParams.append('category', cat));
+    
+    window.location.href = url.toString();
+};
+
+window.clearAllFilters = function() {
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('input[type="radio"]').forEach(rb => rb.checked = false);
+};
+
+// ========== WISHLIST FUNCTION ==========
+window.toggleWishlist = function(productId, event) {
+    if (event) event.stopPropagation();
+    
+    const btn = event.currentTarget;
+    const icon = btn.querySelector('i');
+    
+    fetch(`/api/wishlist/add/${productId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            btn.classList.toggle('active');
+            if (btn.classList.contains('active')) {
+                icon.classList.remove('fa-regular');
+                icon.classList.add('fa-solid');
+            } else {
+                icon.classList.remove('fa-solid');
+                icon.classList.add('fa-regular');
+            }
+        }
+    })
+    .catch(error => console.error('Wishlist error:', error));
+};
+
+// ========== CLOSE MODALS WHEN CLICKING OUTSIDE ==========
+document.addEventListener('click', function(e) {
+    // Close filter sidebar
+    const filterSidebar = document.getElementById('filterSidebar');
+    if (filterSidebar && filterSidebar.style.display === 'flex' && e.target === filterSidebar) {
+        closeFilterSidebar();
+    }
+    
+    // Close sort bottom sheet
+    const sortSheet = document.getElementById('sortBottomSheet');
+    if (sortSheet && sortSheet.style.display === 'flex' && e.target === sortSheet) {
+        closeSortBottomSheet();
+    }
+    
+    // Close quick view
+    const quickView = document.getElementById('quickViewModal');
+    if (quickView && quickView.style.display === 'flex' && e.target === quickView) {
+        closeQuickView();
+    }
+});
+
+// ========== ESCAPE KEY ==========
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeQuickView();
+        closeFilterSidebar();
+        closeSortBottomSheet();
+    }
+});
+
+// ========== INITIALIZE ==========
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ All functions loaded');
+    
+    // Set initial sort label
+    const sortSelect = document.getElementById('sort-select');
+    const selectedSpan = document.getElementById('selected-sort');
+    
+    if (sortSelect && selectedSpan) {
+        const selectedOption = sortSelect.options[sortSelect.selectedIndex];
+        if (selectedOption) {
+            selectedSpan.textContent = selectedOption.text;
+        }
+    }
+});
+</script>
+
+<style>
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+}
+
+.cart-updated {
+    transform: scale(1.3);
+    color: #4CAF50;
+    transition: all 0.3s ease;
+}
+</style>
 {% endblock %}

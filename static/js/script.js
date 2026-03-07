@@ -946,3 +946,60 @@ fetch('/api/wishlist/add/1', {
 .catch(err => console.error('API Error:', err));
 
  */
+
+
+// Add key specs dynamically based on product category
+document.addEventListener('DOMContentLoaded', function() {
+    // Only run on mobile
+    if (window.innerWidth <= 768) {
+        const productCards = document.querySelectorAll('.product-card');
+        
+        productCards.forEach(card => {
+            // Check if key specs already exist
+            if (!card.querySelector('.key-specs')) {
+                const productInfo = card.querySelector('.product-info');
+                const price = card.querySelector('.price');
+                
+                // Create specs container
+                const specsDiv = document.createElement('div');
+                specsDiv.className = 'key-specs';
+                
+                // Get product data from the card
+                const productName = card.querySelector('.product-info h3')?.textContent || '';
+                const category = getCategoryFromProduct(productName);
+                
+                // Add specs based on category
+                if (category === 'mobile') {
+                    specsDiv.innerHTML = `
+                        <span class="spec-chip"><i class="fa-regular fa-microchip"></i> 8 GB RAM</span>
+                        <span class="spec-chip"><i class="fa-regular fa-database"></i> 128 GB ROM</span>
+                        <span class="spec-chip"><i class="fa-regular fa-battery-full"></i> 5000 mAh</span>
+                    `;
+                } else if (category === 'laptop') {
+                    specsDiv.innerHTML = `
+                        <span class="spec-chip"><i class="fa-regular fa-microchip"></i> 16 GB RAM</span>
+                        <span class="spec-chip"><i class="fa-regular fa-database"></i> 512 GB SSD</span>
+                        <span class="spec-chip"><i class="fa-regular fa-cpu"></i> i7</span>
+                    `;
+                }
+                
+                // Insert specs after price
+                if (price && price.nextSibling) {
+                    price.parentNode.insertBefore(specsDiv, price.nextSibling);
+                } else if (price) {
+                    price.parentNode.appendChild(specsDiv);
+                }
+            }
+        });
+    }
+});
+
+function getCategoryFromProduct(productName) {
+    productName = productName.toLowerCase();
+    if (productName.includes('iphone') || productName.includes('samsung') || productName.includes('redmi') || productName.includes('oneplus') || productName.includes('motorola')) {
+        return 'mobile';
+    } else if (productName.includes('laptop') || productName.includes('macbook') || productName.includes('dell') || productName.includes('hp')) {
+        return 'laptop';
+    }
+    return 'other';
+}
