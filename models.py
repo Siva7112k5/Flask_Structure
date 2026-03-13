@@ -54,6 +54,16 @@ class Order(db.Model):
     total = db.Column(db.Float, default=0)
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # >>>>>>>>>> NEW TRACKING FIELDS (ADD THESE 6 LINES) <<<<<<<<<<
+    shipped_date = db.Column(db.DateTime, nullable=True)
+    out_for_delivery_date = db.Column(db.DateTime, nullable=True)
+    delivered_date = db.Column(db.DateTime, nullable=True)
+    cancelled_date = db.Column(db.DateTime, nullable=True)
+    cancellation_reason = db.Column(db.String(200), nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # >>>>>>>>>> END OF NEW FIELDS <<<<<<<<<<
+
     items = db.relationship('OrderItem', backref='order', lazy=True, cascade='all, delete-orphan')
 
 class OrderItem(db.Model):
@@ -76,7 +86,6 @@ class Review(db.Model):
     sentiment_score = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationships
     user = db.relationship('User', backref='user_reviews')
     product = db.relationship('Product', backref='product_reviews')
     images = db.relationship('ReviewImage', backref='review_images', cascade='all, delete-orphan')
@@ -86,8 +95,6 @@ class ReviewImage(db.Model):
     review_id = db.Column(db.Integer, db.ForeignKey('review.id'), nullable=False)
     image_url = db.Column(db.String(300), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # No relationship needed - it's defined in Review class
 
 class Wishlist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -95,8 +102,7 @@ class Wishlist(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationships
     user = db.relationship('User', backref='wishlist_items')
     product = db.relationship('Product', backref='wishlist_users')
     
-    __table_args__ = (db.UniqueConstraint('user_id', 'product_id', name='unique_wishlist'),)  
+    __table_args__ = (db.UniqueConstraint('user_id', 'product_id', name='unique_wishlist'),)

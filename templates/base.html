@@ -5,12 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Triowise Plus | Online Shopping{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
     <link rel="icon" type="image/jpg" href="{{ url_for('static', filename='images/TW_logo1.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
  
 </head>
 <body data-user-authenticated="{% if current_user.is_authenticated %}true{% else %}false{% endif %}">
+    <!-- Page Loader for Slow Server -->
+<!-- <div class="page-loader" id="pageLoader"> -->
+    <!-- Option 1: Simple Spinner -->
+<!--     <div class="loader-spinner"></div>
+    <div class="loading-text">
+        <i class="fa-solid fa-spinner"></i>
+        <span>Loading Triowise...</span>
+    </div> -->
+<!--     <div class="pulse-loader">
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
+</div>
+<div class="loading-text">Loading amazing products...</div>
+<div class="bounce-loader">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+</div>
+<div class="loading-text">Please wait...</div>
+<div class="skeleton-loader">
+    <div class="skeleton-card">
+        <div class="skeleton-image"></div>
+        <div class="skeleton-line short"></div>
+        <div class="skeleton-line medium"></div>
+        <div class="skeleton-line long"></div>
+    </div>
+</div> -->
+    
+    <!-- Progress bar (optional) -->
+ <!--    <div class="progress-loader">
+        <div class="progress-bar"></div>
+    </div>
+</div> -->
 <!-- Admin Side Navigation -->
 <div id="sideNav" class="sidenav">
     <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>

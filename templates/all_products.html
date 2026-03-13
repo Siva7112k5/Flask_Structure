@@ -296,7 +296,7 @@
                 <span class="current">₹{{ product.price }}</span>
                 {% if product.compare_price and product.compare_price > product.price %}
                 <span class="original">₹{{ product.compare_price }}</span>
-                <span class="discount">{{ ((product.compare_price - product.price) / product.compare_price * 100)|int }}% OFF</span>
+                <!-- <span class="discount">{{ ((product.compare_price - product.price) / product.compare_price * 100)|int }}% OFF</span> -->
                 {% endif %}
             </div>
             

@@ -100,9 +100,46 @@
                 View My Orders <i class="fa-solid fa-arrow-right"></i>
             </a>
         </div>
+        <div class="track-order-section">
+    <a href="{{ url_for('track_order', order_id=order.id) }}" class="track-order-btn">
+        <i class="fa-solid fa-location-dot"></i> Track Order
+    </a>
+    <p class="track-info">You can also track this order from <a href="{{ url_for('my_orders') }}">My Orders</a></p>
+</div>
     </div>
 </div>
 
+<style>
+.track-order-section {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.track-order-btn {
+    display: inline-block;
+    padding: 12px 30px;
+    background: #2874f0;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.track-order-btn:hover {
+    background: #1b5fc9;
+}
+
+.track-info {
+    font-size: 14px;
+    color: #666;
+}
+
+.track-info a {
+    color: #2874f0;
+    text-decoration: none;
+}
+</style>
 <style>
 .order-confirmed-page {
     max-width: 800px;

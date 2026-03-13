@@ -164,16 +164,19 @@
                                 {{ order.status|title }}
                             </span>
                         </td>
-                        <td>
-                            <div class="action-buttons">
-                                <a href="{{ url_for('order_confirmed', order_id=order.id) }}" class="action-btn view" title="View Order">
-                                    <i class="fa-regular fa-eye"></i>
-                                </a>
-                                <button class="action-btn edit" onclick="editOrder({{ order.id }})" title="Edit Order">
-                                    <i class="fa-regular fa-pen-to-square"></i>
-                                </button>
-                            </div>
-                        </td>
+                    <td>
+    <div class="action-buttons">
+        <!-- View Order Button -->
+        <a href="{{ url_for('order_confirmed', order_id=order.id) }}" class="action-btn view" title="View Order">
+            <i class="fa-regular fa-eye"></i>
+        </a>
+        
+        <!-- Edit Order Button - Using <a> tag for simplicity -->
+        <a href="{{ url_for('admin_edit_order', order_id=order.id) }}" class="action-btn edit" title="Edit Order">
+            <i class="fa-regular fa-pen-to-square"></i>
+        </a>
+    </div>
+</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -316,8 +319,45 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<script>
+function editOrder(orderId) {
+    // Redirect to the edit order page
+    window.location.href = `/admin/order/edit/${orderId}`;
+}
 
+// Or if you prefer using url_for pattern (works in templates)
+function editOrder(orderId) {
+    window.location.href = "{{ url_for('admin_edit_order', order_id=0) }}".replace('0', orderId);
+}
+</script>
 <style>
+    .action-buttons a {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: transparent;
+    color: #718096;
+}
+
+.action-btn.view:hover {
+    background: #4299e1;
+    color: white;
+}
+
+.action-btn.edit:hover {
+    background: #48bb78;
+    color: white;
+}
 /* ========== ADMIN DASHBOARD STYLES ========== */
 
 .dashboard {

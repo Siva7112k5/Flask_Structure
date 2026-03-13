@@ -1,0 +1,518 @@
+{% extends "base.html" %}
+
+{% block title %}Track Order - #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="track-order-page">
+    <!-- Order Header -->
+    <div class="track-header">
+        <h1>Track Your Order</h1>
+        <div class="order-info">
+            <span class="order-number">Order #{{ order.order_number }}</span>
+            <span class="order-date">Placed on {{ order.created_at.strftime('%d %B %Y, %I:%M %p') }}</span>
+        </div>
+    </div>
+
+    <!-- Progress Tracker -->
+    <div class="tracker-container">
+        <div class="progress-tracker">
+            <div class="progress-step {% if order.status in ['confirmed', 'shipped', 'out_for_delivery', 'delivered'] %}completed{% endif %} {% if order.status == 'cancelled' %}cancelled-track{% endif %}">
+                <div class="step-icon">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="step-label">Confirmed</div>
+                <div class="step-date">{% if order.status != 'pending' %}{{ order.updated_at.strftime('%d %b') }}{% endif %}</div>
+            </div>
+            
+            <div class="progress-step {% if order.status in ['shipped', 'out_for_delivery', 'delivered'] %}completed{% endif %} {% if order.status == 'cancelled' %}cancelled-track{% endif %}">
+                <div class="step-icon">
+                    <i class="fa-solid fa-box"></i>
+                </div>
+                <div class="step-label">Shipped</div>
+                <div class="step-date">{% if order.status in ['shipped', 'out_for_delivery', 'delivered'] %}{{ order.shipped_date or '' }}{% endif %}</div>
+            </div>
+            
+            <div class="progress-step {% if order.status in ['out_for_delivery', 'delivered'] %}completed{% endif %} {% if order.status == 'cancelled' %}cancelled-track{% endif %}">
+                <div class="step-icon">
+                    <i class="fa-solid fa-truck"></i>
+                </div>
+                <div class="step-label">Out for Delivery</div>
+                <div class="step-date">{% if order.status == 'out_for_delivery' or order.status == 'delivered' %}{{ order.out_for_delivery_date or '' }}{% endif %}</div>
+            </div>
+            
+            <div class="progress-step {% if order.status == 'delivered' %}completed{% endif %} {% if order.status == 'cancelled' %}cancelled-track{% endif %}">
+                <div class="step-icon">
+                    <i class="fa-solid fa-home"></i>
+                </div>
+                <div class="step-label">Delivered</div>
+                <div class="step-date">{% if order.status == 'delivered' %}{{ order.delivered_date or '' }}{% endif %}</div>
+            </div>
+        </div>
+        
+        <!-- Cancel Status (if cancelled) -->
+        {% if order.status == 'cancelled' %}
+        <div class="cancelled-status">
+            <div class="cancelled-icon">
+                <i class="fa-solid fa-circle-exclamation"></i>
+            </div>
+            <div class="cancelled-message">
+                <h3>Order Cancelled</h3>
+                <p>This order has been cancelled on {{ order.cancelled_date or order.updated_at.strftime('%d %B %Y') }}</p>
+                {% if order.cancellation_reason %}
+                <p class="cancel-reason">Reason: {{ order.cancellation_reason }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Delivery Address & Summary -->
+    <div class="order-summary-grid">
+        <div class="delivery-address-card">
+            <h3><i class="fa-solid fa-location-dot"></i> Delivery Address</h3>
+            <div class="address-details">
+                <p class="customer-name">{{ order.customer_name }}</p>
+                <p>{{ order.address }}</p>
+                <p>{{ order.city }}, {{ order.state }} - {{ order.pincode }}</p>
+                <p class="phone">📞 {{ order.customer_phone }}</p>
+            </div>
+        </div>
+        
+        <div class="order-summary-card">
+            <h3><i class="fa-solid fa-receipt"></i> Order Summary</h3>
+            <div class="summary-row">
+                <span>Subtotal:</span>
+                <span>₹{{ order.subtotal }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Shipping:</span>
+                <span>₹{{ order.shipping }}</span>
+            </div>
+            <div class="summary-row total">
+                <span>Total:</span>
+                <span>₹{{ order.total }}</span>
+            </div>
+            <div class="payment-method">
+                <span class="badge {{ order.payment_method }}">
+                    {% if order.payment_method == 'cod' %}💵 Cash on Delivery
+                    {% elif order.payment_method == 'upi' %}📱 UPI
+                    {% elif order.payment_method == 'card' %}💳 Card
+                    {% else %}{{ order.payment_method|upper }}{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="order-items-section">
+        <h3><i class="fa-solid fa-boxes"></i> Items in Your Order</h3>
+        <div class="items-list">
+            {% for item in order.items %}
+            <div class="item-card">
+                <div class="item-image">
+                    <img src="{{ url_for('static', filename=item.product.image) if item.product else url_for('static', filename='images/placeholder.jpg') }}" alt="{{ item.product_name }}">
+                </div>
+                <div class="item-details">
+                    <h4>{{ item.product_name }}</h4>
+                    <div class="item-meta">
+                        <span>Quantity: {{ item.quantity }}</span>
+                        <span>Price: ₹{{ item.price }}</span>
+                    </div>
+                </div>
+                <div class="item-total">
+                    ₹{{ item.subtotal }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <a href="{{ url_for('my_orders') }}" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Back to Orders
+        </a>
+        {% if order.status != 'cancelled' and order.status != 'delivered' %}
+        <button class="btn-need-help" onclick="openChat()">
+            <i class="fa-regular fa-message"></i> Need Help?
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.track-order-page {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+/* Header */
+.track-header {
+    margin-bottom: 40px;
+}
+
+.track-header h1 {
+    font-size: 28px;
+    color: #212121;
+    margin-bottom: 10px;
+}
+
+.order-info {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.order-number {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2874f0;
+    background: #e8f0fe;
+    padding: 5px 15px;
+    border-radius: 20px;
+}
+
+.order-date {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Progress Tracker - Flipkart Style */
+.tracker-container {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.progress-tracker {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin: 20px 0;
+}
+
+.progress-tracker::before {
+    content: '';
+    position: absolute;
+    top: 25px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #e0e0e0;
+    z-index: 1;
+}
+
+.progress-step {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    flex: 1;
+}
+
+.step-icon {
+    width: 50px;
+    height: 50px;
+    background: #f0f0f0;
+    border: 3px solid #e0e0e0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    font-size: 20px;
+    color: #999;
+    transition: all 0.3s ease;
+}
+
+.progress-step.completed .step-icon {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.step-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.step-date {
+    font-size: 12px;
+    color: #999;
+}
+
+.progress-step.completed .step-label {
+    color: #28a745;
+}
+
+/* Cancel Status */
+.cancelled-status {
+    margin-top: 30px;
+    padding: 20px;
+    background: #fff3f3;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid #ffcdd2;
+}
+
+.cancelled-icon {
+    font-size: 40px;
+    color: #dc3545;
+}
+
+.cancelled-message h3 {
+    color: #dc3545;
+    margin-bottom: 5px;
+}
+
+.cancel-reason {
+    color: #666;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.cancelled-track .step-icon {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+/* Order Summary Grid */
+.order-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.delivery-address-card,
+.order-summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.delivery-address-card h3,
+.order-summary-card h3 {
+    font-size: 16px;
+    margin-bottom: 15px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.address-details .customer-name {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.address-details p {
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.phone {
+    margin-top: 10px;
+    color: #2874f0;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.summary-row.total {
+    font-size: 18px;
+    font-weight: 700;
+    color: #212121;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.payment-method {
+    margin-top: 15px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge.cod { background: #fff3e0; color: #e65100; }
+.badge.upi { background: #e8f5e9; color: #2e7d32; }
+.badge.card { background: #e3f2fd; color: #1565c0; }
+
+/* Order Items */
+.order-items-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.order-items-section h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.item-card {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+}
+
+.item-image {
+    width: 60px;
+    height: 60px;
+    background: #f8f8f8;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-right: 15px;
+}
+
+.item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.item-details {
+    flex: 1;
+}
+
+.item-details h4 {
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #212121;
+}
+
+.item-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 12px;
+    color: #666;
+}
+
+.item-total {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2874f0;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.btn-back,
+.btn-need-help {
+    padding: 12px 30px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-back {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.btn-need-help {
+    background: #2874f0;
+    color: white;
+}
+
+.btn-back:hover {
+    background: #e0e0e0;
+}
+
+.btn-need-help:hover {
+    background: #1b5fc9;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .progress-tracker {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .progress-tracker::before {
+        display: none;
+    }
+    
+    .progress-step {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        text-align: left;
+    }
+    
+    .step-icon {
+        margin: 0;
+    }
+    
+    .order-summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .item-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .item-image {
+        margin-right: 0;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+function openChat() {
+    // Open chat widget if available
+    if (typeof toggleChat === 'function') {
+        toggleChat();
+    } else {
+        alert('Customer support is available. Please email us at support@triowise.com');
+    }
+}
+</script>
+{% endblock %}

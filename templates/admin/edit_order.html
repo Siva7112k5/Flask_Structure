@@ -1,0 +1,412 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Edit Order #{{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="admin-edit-order">
+    <div class="edit-header">
+        <h1>Edit Order #{{ order.order_number }}</h1>
+        <a href="{{ url_for('admin_orders') }}" class="back-btn">
+            <i class="fa-solid fa-arrow-left"></i> Back to Orders
+        </a>
+    </div>
+
+    <div class="edit-container">
+        <form method="POST" class="edit-order-form">
+            <!-- Order Status -->
+            <div class="form-section">
+                <h3>Order Status</h3>
+                <div class="form-group">
+                    <label for="status">Current Status:</label>
+                    <select name="status" id="status" class="form-control">
+                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>🕒 Pending</option>
+                        <option value="confirmed" {% if order.status == 'confirmed' %}selected{% endif %}>✅ Confirmed</option>
+                        <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>📦 Shipped</option>
+                        <option value="out_for_delivery" {% if order.status == 'out_for_delivery' %}selected{% endif %}>🚚 Out for Delivery</option>
+                        <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>🏠 Delivered</option>
+                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>❌ Cancelled</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Cancellation Reason (hidden by default) -->
+            <div class="form-section" id="cancellation-section" style="display: none;">
+                <h3>Cancellation Reason</h3>
+                <div class="form-group">
+                    <label for="cancellation_reason">Reason for cancellation:</label>
+                    <textarea name="cancellation_reason" id="cancellation_reason" rows="3" class="form-control">{{ order.cancellation_reason or '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- Order Information (Read-only) -->
+            <div class="form-section">
+                <h3>Order Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Customer Name:</label>
+                        <span>{{ order.customer_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Customer Email:</label>
+                        <span>{{ order.customer_email }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Customer Phone:</label>
+                        <span>{{ order.customer_phone or 'N/A' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Order Date:</label>
+                        <span>{{ order.created_at.strftime('%d %B %Y, %I:%M %p') }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Payment Method:</label>
+                        <span class="payment-badge {{ order.payment_method }}">{{ order.payment_method|upper }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Total Amount:</label>
+                        <span class="total-amount">₹{{ order.total }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Address -->
+            <div class="form-section">
+                <h3>Shipping Address</h3>
+                <div class="address-box">
+                    <p>{{ order.address }}</p>
+                    <p>{{ order.city }}, {{ order.state }} - {{ order.pincode }}</p>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="form-section">
+                <h3>Order Items</h3>
+                <div class="items-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items %}
+                            <tr>
+                                <td>{{ item.product_name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>₹{{ item.price }}</td>
+                                <td>₹{{ item.subtotal }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tracking Dates (Show if applicable) -->
+            {% if order.shipped_date or order.out_for_delivery_date or order.delivered_date or order.cancelled_date %}
+            <div class="form-section">
+                <h3>Tracking History</h3>
+                <div class="tracking-history">
+                    {% if order.shipped_date %}
+                    <div class="tracking-item">
+                        <span class="tracking-icon">📦</span>
+                        <span class="tracking-label">Shipped on:</span>
+                        <span class="tracking-date">{{ order.shipped_date.strftime('%d %B %Y, %I:%M %p') }}</span>
+                    </div>
+                    {% endif %}
+                    {% if order.out_for_delivery_date %}
+                    <div class="tracking-item">
+                        <span class="tracking-icon">🚚</span>
+                        <span class="tracking-label">Out for delivery on:</span>
+                        <span class="tracking-date">{{ order.out_for_delivery_date.strftime('%d %B %Y, %I:%M %p') }}</span>
+                    </div>
+                    {% endif %}
+                    {% if order.delivered_date %}
+                    <div class="tracking-item">
+                        <span class="tracking-icon">🏠</span>
+                        <span class="tracking-label">Delivered on:</span>
+                        <span class="tracking-date">{{ order.delivered_date.strftime('%d %B %Y, %I:%M %p') }}</span>
+                    </div>
+                    {% endif %}
+                    {% if order.cancelled_date %}
+                    <div class="tracking-item cancelled">
+                        <span class="tracking-icon">❌</span>
+                        <span class="tracking-label">Cancelled on:</span>
+                        <span class="tracking-date">{{ order.cancelled_date.strftime('%d %B %Y, %I:%M %p') }}</span>
+                        {% if order.cancellation_reason %}
+                        <div class="cancellation-reason">Reason: {{ order.cancellation_reason }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn-save">
+                    <i class="fa-solid fa-save"></i> Update Order
+                </button>
+                <a href="{{ url_for('admin_orders') }}" class="btn-cancel">
+                    <i class="fa-solid fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.admin-edit-order {
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.edit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.edit-header h1 {
+    font-size: 24px;
+    color: #212121;
+}
+
+.back-btn {
+    text-decoration: none;
+    color: #2874f0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 15px;
+    border: 1px solid #2874f0;
+    border-radius: 4px;
+    transition: 0.3s;
+}
+
+.back-btn:hover {
+    background: #2874f0;
+    color: white;
+}
+
+.edit-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    padding: 25px;
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.form-section h3 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #666;
+    font-size: 14px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-control:focus {
+    border-color: #2874f0;
+    outline: none;
+}
+
+textarea.form-control {
+    resize: vertical;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.info-item label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.info-item span {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+}
+
+.total-amount {
+    color: #2874f0 !important;
+    font-size: 18px !important;
+}
+
+.address-box {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.address-box p {
+    margin: 3px 0;
+    color: #666;
+}
+
+.items-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.items-table th {
+    text-align: left;
+    padding: 10px;
+    background: #f8f9fa;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+}
+
+.items-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.tracking-history {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tracking-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.tracking-item.cancelled {
+    background: #fff3f3;
+}
+
+.tracking-icon {
+    font-size: 20px;
+}
+
+.tracking-label {
+    font-weight: 600;
+    color: #666;
+    min-width: 120px;
+}
+
+.tracking-date {
+    color: #333;
+}
+
+.cancellation-reason {
+    margin-top: 5px;
+    margin-left: 30px;
+    color: #dc3545;
+    font-style: italic;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.btn-save,
+.btn-cancel {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: 0.3s;
+}
+
+.btn-save {
+    background: #28a745;
+    color: white;
+}
+
+.btn-save:hover {
+    background: #218838;
+}
+
+.btn-cancel {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background: #c82333;
+}
+
+@media (max-width: 768px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tracking-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+// Show/hide cancellation reason based on status
+document.getElementById('status').addEventListener('change', function() {
+    const cancellationSection = document.getElementById('cancellation-section');
+    if (this.value === 'cancelled') {
+        cancellationSection.style.display = 'block';
+    } else {
+        cancellationSection.style.display = 'none';
+    }
+});
+
+// Check initial status
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelect = document.getElementById('status');
+    const cancellationSection = document.getElementById('cancellation-section');
+    if (statusSelect.value === 'cancelled') {
+        cancellationSection.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}

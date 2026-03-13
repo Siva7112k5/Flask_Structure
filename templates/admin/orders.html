@@ -133,6 +133,12 @@
                     <td>
                         <span class="status-badge {{ order.status }}">{{ order.status|title }}</span>
                     </td>
+                    <!-- In your order list, add this column or button -->
+<td>
+    <a href="{{ url_for('track_order', order_id=order.id) }}" class="track-btn">
+        <i class="fa-solid fa-location-dot"></i> Track
+    </a>
+</td>
                     <td>
                         <div class="action-buttons">
                             <a href="{{ url_for('order_confirmed', order_id=order.id) }}" class="action-btn view" title="View Order">

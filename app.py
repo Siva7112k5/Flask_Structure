@@ -21,6 +21,7 @@ try:
     from dotenv import load_dotenv
     load_dotenv()
     print("✅ dotenv loaded")
+    
 except ImportError:
     print("⚠️ dotenv not installed, using environment variables")
 
@@ -44,13 +45,35 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 # Email configuration (optional)
-app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
-app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
-app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
+# ========== EMAIL CONFIGURATION ==========
+# Email configuration for Gmail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+
+# Get email credentials from environment variables
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', app.config['MAIL_USERNAME'])
 
+# Validate email configuration
+if not app.config['MAIL_USERNAME'] or not app.config['MAIL_PASSWORD']:
+    print("⚠️ WARNING: Email credentials not set. Order confirmation emails will not send.")
+    print("   Please set MAIL_USERNAME and MAIL_PASSWORD in .env file")
+else:
+    print(f"✅ Email configured for: {app.config['MAIL_USERNAME']}")
+
+# ========== DEBUG EMAIL CONFIGURATION ==========
+print("\n" + "="*50)
+print("🔍 EMAIL DEBUG INFO")
+print("="*50)
+print(f"Current directory: {os.getcwd()}")
+print(f".env file exists: {os.path.exists('.env')}")
+print(f"MAIL_USERNAME from os.environ: {os.environ.get('MAIL_USERNAME')}")
+print(f"MAIL_PASSWORD from os.environ: {'*' * 8 if os.environ.get('MAIL_PASSWORD') else 'NOT SET'}")
+print(f"MAIL_PASSWORD length: {len(os.environ.get('MAIL_PASSWORD', ''))}")
+print("="*50 + "\n")
 # ========== CREATE UPLOAD DIRECTORIES ==========
 # Check if running on Vercel
 if os.environ.get('VERCEL_ENV') == 'production':
@@ -638,7 +661,53 @@ def wishlist():
     return render_template('wishlist.html', products=products)
 
 #-------------------------------------------------------------------------------------------------------------------------------------
+@app.route('/track-order/<int:order_id>')
+@login_required
+def track_order(order_id):
+    """Track order status page"""
+    order = Order.query.get_or_404(order_id)
+    
+    # Security: Users can only track their own orders (admins can track all)
+    if order.user_id != current_user.id and current_user.role != 'admin':
+        flash('Access denied.', 'danger')
+        return redirect(url_for('home'))
+    
+    return render_template('track_order.html', order=order)
 
+#----------------------------------------------------------------------------------------------------------
+@app.route('/admin/order/edit/<int:order_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_edit_order(order_id):
+    """Admin edit order status"""
+    order = Order.query.get_or_404(order_id)
+    
+    if request.method == 'POST':
+        old_status = order.status
+        new_status = request.form.get('status')
+        order.status = new_status
+        
+        # Update tracking dates based on status
+        from datetime import datetime
+        now = datetime.utcnow()
+        
+        if new_status == 'shipped' and old_status != 'shipped':
+            order.shipped_date = now
+        elif new_status == 'out_for_delivery':
+            order.out_for_delivery_date = now
+        elif new_status == 'delivered':
+            order.delivered_date = now
+        elif new_status == 'cancelled' and old_status != 'cancelled':
+            order.cancelled_date = now
+            order.cancellation_reason = request.form.get('cancellation_reason')
+        
+        db.session.commit()
+        flash(f'Order #{order.order_number} status updated to {new_status}', 'success')
+        return redirect(url_for('admin_orders'))
+    
+    return render_template('admin/edit_order.html', order=order)
+
+#----------------------------------------------------------------------------------------------------------------
 
 @app.route('/add-to-cart/<int:product_id>', methods=['POST'])
 def add_to_cart(product_id):
@@ -831,23 +900,84 @@ def checkout():
 
 
 def send_order_confirmation_email(order):
+    """Send order confirmation email to customer with debug info"""
     try:
-        user = User.query.get(order.user_id)
+        # Debug: Print configuration
+        print("\n" + "="*50)
+        print("📧 DEBUG: Attempting to send email")
+        print("="*50)
         
-        # Render the template (this is CORRECT - uses Jinja2 properly)
-        body = render_template('emails/order_confirmation.txt', order=order)
+        # Check if email is configured
+        if not app.config['MAIL_USERNAME']:
+            print("❌ MAIL_USERNAME is not set")
+            return False
+            
+        if not app.config['MAIL_PASSWORD']:
+            print("❌ MAIL_PASSWORD is not set")
+            return False
+            
+        print(f"✅ MAIL_USERNAME: {app.config['MAIL_USERNAME']}")
+        print(f"✅ MAIL_PASSWORD: {'*' * 8} (length: {len(app.config['MAIL_PASSWORD'])})")
+        
+        user = User.query.get(order.user_id)
+        if not user:
+            print(f"❌ User not found for order {order.id}")
+            return False
+            
+        print(f"✅ Recipient: {user.email}")
+        
+        # Create email
+        subject = f"Order Confirmed! #{order.order_number} - Triowise"
         
         msg = Message(
-            subject=f"Order Confirmation - #{order.order_number}",
-            recipients=[user.email]
+            subject=subject,
+            recipients=[user.email],
+            sender=app.config['MAIL_DEFAULT_SENDER'] or app.config['MAIL_USERNAME']
         )
-        msg.body = body
+        
+        # Build email body
+        msg.body = f"""
+Dear {order.customer_name},
+
+Thank you for your order! Order #{order.order_number} has been confirmed.
+
+Order Details:
+━━━━━━━━━━━━━━━━━━━━━━
+Order Date: {order.created_at.strftime('%d %B %Y, %I:%M %p')}
+Payment Method: {order.payment_method.upper()}
+
+Items:
+"""
+        for item in order.items:
+            msg.body += f"  • {item.product_name} x{item.quantity} - ₹{item.subtotal}\n"
+        
+        msg.body += f"""
+━━━━━━━━━━━━━━━━━━━━━━
+Subtotal: ₹{order.subtotal}
+Shipping: ₹{order.shipping}
+TOTAL: ₹{order.total}
+━━━━━━━━━━━━━━━━━━━━━━
+
+Shipping Address:
+{order.address}
+{order.city}, {order.state} - {order.pincode}
+
+Track your order: {url_for('my_orders', _external=True)}
+
+Thank you for shopping with Triowise!
+"""
+        
+        print("📤 Attempting to send email...")
         mail.send(msg)
-        print(f"✅ Email sent to {user.email}")
+        print(f"✅ Email sent successfully to {user.email}")
+        print("="*50 + "\n")
         return True
         
     except Exception as e:
-        print(f"❌ Email failed: {str(e)}")
+        print(f"❌ Email failed with error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        print("="*50 + "\n")
         return False
     
 
@@ -2275,6 +2405,71 @@ import os
 from werkzeug.utils import secure_filename
 from utils.upload import save_review_images
 
+
+    
+@app.route('/debug-email')
+def debug_email():
+    """Debug route to test email configuration"""
+    try:
+        print("\n" + "="*50)
+        print("🔍 EMAIL DEBUG INFO")
+        print("="*50)
+        
+        # Check if mail is initialized
+        print(f"Mail object: {mail}")
+        
+        # Check config
+        print(f"MAIL_SERVER: {app.config.get('MAIL_SERVER')}")
+        print(f"MAIL_PORT: {app.config.get('MAIL_PORT')}")
+        print(f"MAIL_USE_TLS: {app.config.get('MAIL_USE_TLS')}")
+        print(f"MAIL_USERNAME: {app.config.get('MAIL_USERNAME')}")
+        password = app.config.get('MAIL_PASSWORD', '')
+        print(f"MAIL_PASSWORD: {'*' * len(password)} (length: {len(password)})")
+        print(f"MAIL_DEFAULT_SENDER: {app.config.get('MAIL_DEFAULT_SENDER')}")
+        
+        # Try to send a test email
+        if app.config['MAIL_USERNAME'] and app.config['MAIL_PASSWORD']:
+            msg = Message(
+                subject="🔧 Debug Test Email from Triowise",
+                recipients=[app.config['MAIL_USERNAME']],
+                body=f"""
+This is a test email to verify your email configuration.
+
+Time: {datetime.now()}
+Server: {app.config['MAIL_SERVER']}
+Port: {app.config['MAIL_PORT']}
+
+If you receive this, email is working correctly!
+                """
+            )
+            mail.send(msg)
+            return jsonify({
+                'success': True,
+                'message': 'Test email sent! Check your inbox.',
+                'config': {
+                    'server': app.config['MAIL_SERVER'],
+                    'port': app.config['MAIL_PORT'],
+                    'username': app.config['MAIL_USERNAME'],
+                    'password_length': len(app.config['MAIL_PASSWORD'])
+                }
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Email not configured',
+                'config': {
+                    'username': app.config.get('MAIL_USERNAME'),
+                    'password_set': bool(app.config.get('MAIL_PASSWORD'))
+                }
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        })    
+
 @app.route('/product/<int:product_id>/review', methods=['GET', 'POST'])
 @login_required
 def product_review(product_id):
@@ -2350,6 +2545,52 @@ def product_review(product_id):
 # ... all your routes and functions ...
 
 # At the VERY BOTTOM of app.py
+import traceback
+
+# Add this near the bottom of app.py, before the final if __name__ block
+@app.route('/test-email-now')
+def test_email_now():
+    """Simple test to check email"""
+    try:
+        print("\n" + "="*60)
+        print("🔧 TESTING EMAIL CONFIGURATION")
+        print("="*60)
+        
+        # Check if mail is initialized
+        print(f"📧 Mail object: {mail}")
+        
+        # Check configuration
+        print(f"📧 MAIL_SERVER: {app.config.get('MAIL_SERVER')}")
+        print(f"📧 MAIL_PORT: {app.config.get('MAIL_PORT')}")
+        print(f"📧 MAIL_USERNAME: {app.config.get('MAIL_USERNAME')}")
+        
+        password = app.config.get('MAIL_PASSWORD', '')
+        if password:
+            print(f"📧 MAIL_PASSWORD: {'*' * 8} (length: {len(password)})")
+        else:
+            print("📧 MAIL_PASSWORD: ❌ NOT SET")
+            
+        # Try to send
+        if app.config['MAIL_USERNAME'] and password:
+            from flask_mail import Message
+            
+            msg = Message(
+                subject="✅ Test from Triowise",
+                recipients=[app.config['MAIL_USERNAME']],
+                body="If you see this, email is working!"
+            )
+            mail.send(msg)
+            return "✅ Email sent! Check your inbox."
+        else:
+            return "❌ Email not configured"
+            
+    except Exception as e:
+        print(f"❌ Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return f"❌ Error: {str(e)}"
+
+
 # ========== RUN THE APP ==========
 if __name__ == '__main__':
     import socket

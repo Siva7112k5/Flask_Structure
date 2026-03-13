@@ -3007,6 +3007,10 @@ color: #344daf;
     .product-card .discount {
         font-size: 11px;
     }
+     .product-card .discount-badge{
+
+        display: none !important;
+     }
     
     .product-card .quick-view-btn {
         padding: 8px 0;
@@ -5653,24 +5657,40 @@ color: #344daf;
 body.user-logged-in .login-popup-overlay {
     display: none !important;
 }
-
-/* Responsive */
+/* Responsive - Optimized for Smartphones */
 @media (max-width: 480px) {
     .login-popup-container {
-        width: 95%;
-        margin: 20px;
+        /* Use viewport width to ensure it stays within bounds */
+        width: 92vw; 
+        max-width: 400px;
+        margin: 10px auto;
+        
+        /* Ensure the popup doesn't get taller than the screen */
+        max-height: 90vh;
+        overflow-y: auto;
+        border-radius: 12px; /* Softer corners look better on mobile */
     }
     
     .login-popup-header h2 {
-        font-size: 20px;
+        font-size: 1.25rem; /* Using rem is better for accessibility */
+        line-height: 1.4;
     }
     
     .login-popup-body {
-        padding: 20px;
+        padding: 24px 16px; /* Increased vertical padding for better breathing room */
     }
     
     .popup-social-login {
+        display: flex;
         flex-direction: column;
+        gap: 12px; /* Adds space between stacked buttons */
+    }
+
+    /* Pro Tip: Make buttons/inputs larger for thumbs */
+    .login-popup-container input, 
+    .login-popup-container button {
+        height: 48px; 
+        font-size: 16px; /* Prevents iOS from auto-zooming on focus */
     }
 }
 
@@ -7584,4 +7604,220 @@ a:hover,
     .quick-view-actions {
         flex-direction: column;
     }
+}
+
+
+/* ========== LOADING SPINNER FOR SLOW SERVER ========== */
+
+/* Full page loader */
+.page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.page-loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Main spinner */
+.loader-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2874f0;
+    border-right: 4px solid #667eea;
+    border-bottom: 4px solid #764ba2;
+    border-radius: 50%;
+    animation: spin 1.2s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+/* Pulsing circles loader */
+.pulse-loader {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+}
+
+.pulse-loader .circle {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.pulse-loader .circle:nth-child(2) {
+    animation-delay: 0.2s;
+    background: linear-gradient(135deg, #764ba2, #9c5960);
+}
+
+.pulse-loader .circle:nth-child(3) {
+    animation-delay: 0.4s;
+    background: linear-gradient(135deg, #9c5960, #2874f0);
+}
+
+/* Bouncing dots loader */
+.bounce-loader {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+.bounce-loader .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #2874f0;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.bounce-loader .dot:nth-child(1) { animation-delay: -0.32s; background: #667eea; }
+.bounce-loader .dot:nth-child(2) { animation-delay: -0.16s; background: #764ba2; }
+.bounce-loader .dot:nth-child(3) { animation-delay: 0; background: #9c5960; }
+
+/* Skeleton loading animation */
+.skeleton-loader {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+}
+
+.skeleton-line {
+    height: 20px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 12px;
+}
+
+.skeleton-line.short { width: 60%; }
+.skeleton-line.medium { width: 80%; }
+.skeleton-line.long { width: 100%; }
+
+.skeleton-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.skeleton-image {
+    height: 200px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+/* Loading text */
+.loading-text {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.loading-text i {
+    color: #2874f0;
+    animation: spin 1s linear infinite;
+}
+
+/* Progress bar loader */
+.progress-loader {
+    width: 200px;
+    height: 4px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 30%;
+    background: linear-gradient(90deg, #667eea, #764ba2, #9c5960);
+    border-radius: 4px;
+    animation: progress 1.5s ease-in-out infinite;
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    50% { 
+        transform: scale(1.2);
+        opacity: 1;
+    }
+}
+
+@keyframes bounce {
+    0%, 80%, 100% { 
+        transform: scale(0);
+        opacity: 0.5;
+    }
+    40% { 
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes progress {
+    0% { left: -30%; }
+    100% { left: 100%; }
+}
+
+/* ========== DARK MODE SUPPORT ========== */
+[data-theme="dark"] .page-loader {
+    background: rgba(26, 26, 26, 0.95);
+}
+
+[data-theme="dark"] .skeleton-line,
+[data-theme="dark"] .skeleton-image {
+    background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
+    background-size: 200% 100%;
+}
+
+[data-theme="dark"] .skeleton-card {
+    background: #2d2d2d;
+}
+
+[data-theme="dark"] .progress-loader {
+    background: #333;
+}
+
+[data-theme="dark"] .loading-text {
+    color: #ccc;
 }
